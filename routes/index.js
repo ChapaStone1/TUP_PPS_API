@@ -5,25 +5,11 @@ const router = express.Router();
 //Rutas
 //const sample = require("./sample");
 const CharactersMarvel = require("./CharactersMarvelRoutes");
-const PokemonSearch = require("./PokemonSearch");
-const LaPiedraFilosofal = require("./LaPiedraFilosofal");
-const PatientsRoutes = require("./PatientsRoutes");
-const Clientes = require("../routes/Clientes")
 
 //Rutas de prueba
 //router.use("/sample", sample);
-//Rutas Eric
-router.use("/api/v1/clientes",Clientes);
 //Rutas Juan
 router.use("/api/v1/marvel/chars", CharactersMarvel);
-//Rutas Diego
-router.use("/api/v1/pokemon", PokemonSearch);
-//Rutas Eugenia
-router.use("/api/v1/personajes", LaPiedraFilosofal); // Paginación y filtros
-router.use("/api/v1/todoslospersonajes", LaPiedraFilosofal); // Sin límite, todos los personajes
-
-//Rutas Matias
-router.use("/api/v1/patients", PatientsRoutes);
 
 //Rutas por defecto
 router.get("*", (req, res) => {
