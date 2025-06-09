@@ -8,8 +8,7 @@
     "start": "node app",
     "watch": "node --watch app.js",
     "lint": "npm run lint . --fix",
-    "standard": "npm run standard",
-    "prepare": "husky install"
+    "standard": "npm run standard"
   },
   "author": "Grupo",
   "license": "ISC",
@@ -20,7 +19,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "husky": "^9.1.6",
+    "link": "^2.1.1",
+    "lint": "^1.1.2",
     "sqlite3": "^5.1.7",
     "standard": "^17.1.0"
   },

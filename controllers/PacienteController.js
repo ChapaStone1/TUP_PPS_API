@@ -1,4 +1,4 @@
-const db = require('../db')
+const db = require('../db/db')
 
 // Obtener perfil del paciente
 const obtenerPerfil = (req, res) => {

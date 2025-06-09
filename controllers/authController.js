@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt')
-const db = require('../db')
+const db = require('../db/db')
 const jwt = require('jsonwebtoken')
 const SECRET_KEY = process.env.SECRET_KEY // Guardá esto en .env real
 

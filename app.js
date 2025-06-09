@@ -8,7 +8,7 @@ app.use(cors())
 app.use(express.json())
 
 // Conexión a base de datos
-const db = require('./db')
+const db = require('./db/db')
 
 // Rutas
 const authRoutes = require('./routes/auth')
