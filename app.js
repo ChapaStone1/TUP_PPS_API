@@ -1,15 +1,29 @@
-// Env
-require("dotenv").config();
-const env = process.env;
+const express = require('express')
+const app = express()
+const cors = require('cors')
+require('dotenv').config()
 
-const express = require("express");
+// Middlewares
+app.use(cors())
+app.use(express.json())
 
-const app = express();
+// Conexión a base de datos
+const db = require('./db')
 
-// Routes
-const routes = require("./routes/index.js");
+// Rutas
+const authRoutes = require('./routes/auth')
+const pacienteRoutes = require('./routes/pacientes')
+const medicoRoutes = require('./routes/medicos')
 
-app.use("/", routes);
+// Usar rutas
+app.use('/api/auth', authRoutes)          // /api/auth/login, /api/auth/register
+app.use('/api/pacientes', pacienteRoutes) // Requiere token
+app.use('/api/medicos', medicoRoutes)     // Público y (en algunos casos) con token admin
+
+// Ruta base
+app.get('/', (req, res) => {
+  res.send('Turnero médico API en funcionamiento')
+})
 
 const port = parseInt(env.PORT) || 3000;
 app.listen(port, () => {

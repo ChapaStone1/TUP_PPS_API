@@ -1,4 +1,4 @@
-require('dotenv').config({ path: './TUP-Labo-4/marvel.env' });
+require('dotenv').config({ path: './TUP_PPS_API/marvel.env' });
 const MarvelCharacters = require('../models/CharactersMarvel');
 const CustomStatusMessage = require('../models/CustomStatusMessage');
 const ErrorMessage = require('../models/ErrorMessage');

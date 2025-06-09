@@ -1,5 +1,4 @@
 .env
 node_modules
-marvel.env
-sample.env
+key.env
 ./sample.env
