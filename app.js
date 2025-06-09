@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
   res.send('Turnero médico API en funcionamiento')
 })
 
-const port = parseInt(env.PORT) || 3000;
+const port = parseInt(process.env.PORT) || 3000;
 app.listen(port, () => {
   console.log("Server Open at " + port);
 });

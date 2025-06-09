@@ -52,8 +52,7 @@ db.serialize(() => {
     fecha_nac TEXT,
     telefono INTEGER,
     email TEXT UNIQUE,
-    password TEXT,
-    FOREIGN KEY (id_medico) REFERENCES medico(id)
+    password TEXT
     )`)
 
   // Tabla de visitas médicas

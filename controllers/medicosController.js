@@ -1,4 +1,4 @@
-const db = require('../db')
+const db = require('../db/db')
 
 
 // Obtener lista de médicos con sus especialidades
