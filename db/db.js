@@ -44,13 +44,15 @@ db.serialize(() => {
     PRIMARY KEY (medico_id, especialidad_id)
   )`)
 
-  // Tabla de pacientes
-  db.run(`CREATE TABLE IF NOT EXISTS pacientes (
+  // Tabla de USUARIOS
+  db.run(`CREATE TABLE IF NOT EXISTS usuario (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
+    dni TEXT NOT NULL UNIQUE,
     sexo TEXT CHECK(sexo IN ('M', 'F')) NOT NULL,
     fecha_nac TEXT,
     telefono INTEGER,
+    tipo TEXT CHECK(tipo IN ('paciente', 'admin')) NOT NULL,
     email TEXT UNIQUE,
     password TEXT
     )`)
@@ -58,11 +60,11 @@ db.serialize(() => {
   // Tabla de visitas médicas
   db.run(`CREATE TABLE IF NOT EXISTS turno (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_paciente INTEGER,
+    id_usuario INTEGER,
     id_medico INTEGER,
     fecha_hora TEXT NOT NULL,
     motivo TEXT,
-    FOREIGN KEY (id_paciente) REFERENCES paciente(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id),
     FOREIGN KEY (id_medico) REFERENCES medico(id)
     )`)
 

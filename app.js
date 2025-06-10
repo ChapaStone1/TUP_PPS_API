@@ -12,12 +12,12 @@ const db = require('./db/db')
 
 // Rutas
 const authRoutes = require('./routes/auth')
-const pacienteRoutes = require('./routes/pacientes')
+const usuarioRoutes = require('./routes/usuarios')
 const medicoRoutes = require('./routes/medicos')
 
 // Usar rutas
 app.use('/api/auth', authRoutes)          // /api/auth/login, /api/auth/register
-app.use('/api/pacientes', pacienteRoutes) // Requiere token
+app.use('/api/usuarios', usuarioRoutes) // Requiere token
 app.use('/api/medicos', medicoRoutes)     // Público y (en algunos casos) con token admin
 
 // Ruta base
