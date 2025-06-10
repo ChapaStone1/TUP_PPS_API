@@ -124,23 +124,29 @@ const opciones = (req, res) => {
   })
 }
 
-// Funciones para admins
 const cargarMedico = (req, res) => {
   const idUsuario = req.user.id
-  const { nombre, telefono, correo } = req.body
+  const { nombre, telefono, correo, imagen } = req.body
+
+  if (!nombre || !correo) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios: nombre y correo' })
+  }
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row) return res.status(500).json({ error: 'Error al verificar usuario' })
     if (row.tipo !== 'admin') return res.status(403).json({ error: 'No autorizado' })
 
-    db.run(`INSERT INTO medico (nombre, telefono, correo) VALUES (?, ?, ?)`,
-      [nombre, telefono, correo],
+    db.run(
+      `INSERT INTO medico (nombre, telefono, correo, imagen) VALUES (?, ?, ?, ?)`,
+      [nombre, telefono, correo, imagen || null],
       function (err) {
         if (err) return res.status(500).json({ error: 'Error al cargar médico' })
         res.status(201).json({ message: 'Médico cargado', id: this.lastID })
-      })
+      }
+    )
   })
 }
+
 
 const eliminarMedico = (req, res) => {
   const idUsuario = req.user.id

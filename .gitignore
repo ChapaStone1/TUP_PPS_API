@@ -2,3 +2,4 @@
 node_modules
 key.env
 ./sample.env
+JWT_SECRET.env

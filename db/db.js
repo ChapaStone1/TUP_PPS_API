@@ -26,6 +26,7 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     telefono TEXT,
+    imagen TEXT,
     correo TEXT
   )`)
 
