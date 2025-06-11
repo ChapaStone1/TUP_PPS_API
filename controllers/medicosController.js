@@ -33,7 +33,7 @@ const buscarPacientePorDNI = (req, res) => {
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row) return res.status(500).json({ error: 'Error al verificar permisos' })
 
-    if (row.tipo !== 'medico' && row.tipo !== 'admin') {
+    if (row.tipo !== 'medico') {
       return res.status(403).json({ error: 'No autorizado' })
     }
 
