@@ -12,17 +12,17 @@ const db = require('./db/db')
 
 // Rutas
 const authRoutes = require('./routes/auth')
-const usuarioRoutes = require('./routes/usuarios')
+const pacienteRoutes = require('./routes/pacientes')
 const medicoRoutes = require('./routes/medicos')
 
 // Usar rutas
 app.use('/api/auth', authRoutes)          // /api/auth/login, /api/auth/register
-app.use('/api/usuarios', usuarioRoutes) // Requiere token
-app.use('/api/medicos', medicoRoutes)     // Público y (en algunos casos) con token admin
+app.use('/api/pacientes', pacienteRoutes) 
+app.use('/api/medicos', medicoRoutes)     /
 
 // Ruta base
 app.get('/', (req, res) => {
-  res.send('Turnero médico API en funcionamiento')
+  res.send('Consultorio Medico UTN API en funcionamiento')
 })
 
 const port = parseInt(process.env.PORT) || 3000;
