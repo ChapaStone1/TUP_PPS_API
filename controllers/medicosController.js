@@ -95,6 +95,40 @@ const eliminarPaciente = (req, res) => {
   })
 }
 
+// Cargar consulta médica en historia clínica
+const cargarConsulta = (req, res) => {
+  const idMedico = req.user.id
+  const idPaciente = req.params.id
+  const { nota, medicacion } = req.body
+
+  if (!nota || !medicacion) {
+    return res.status(400).json({ error: 'Debe completar los campos nota y medicación' })
+  }
+
+  // Verificar que el usuario sea médico
+  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idMedico], (err, medico) => {
+    if (err || !medico) return res.status(500).json({ error: 'Error al verificar permisos del médico' })
+    if (medico.tipo !== 'medico') return res.status(403).json({ error: 'Solo los médicos pueden cargar consultas' })
+
+    // Verificar que el paciente exista y sea de tipo 'paciente'
+    db.get(`SELECT id FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idPaciente], (err, paciente) => {
+      if (err) return res.status(500).json({ error: 'Error al verificar paciente' })
+      if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado o no válido' })
+
+      const fecha = new Date().toISOString().split('T')[0]
+
+      db.run(`
+        INSERT INTO historia_clinica (usuario_id, medico_id, fecha, medicacion, nota)
+        VALUES (?, ?, ?, ?, ?)
+      `, [idPaciente, idMedico, fecha, medicacion, nota], function (err) {
+        if (err) return res.status(500).json({ error: 'Error al cargar la consulta' })
+        res.status(201).json({ message: 'Consulta agregada correctamente', id: this.lastID })
+      })
+    })
+  })
+}
+
+
 // Ver historia clínica de un paciente (médico o el propio paciente)
 const verHistoriaClinica = (req, res) => {
   const idUsuario = req.user.id
@@ -125,6 +159,7 @@ module.exports = {
   obtenerPerfil,
   actualizarPerfil,
   cargarMedico,
+  cargarConsulta,
   buscarPacientePorDNI,
   eliminarPaciente,
   verHistoriaClinica
