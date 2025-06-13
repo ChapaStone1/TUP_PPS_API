@@ -68,16 +68,26 @@ const login = (req, res) => {
     bcrypt.compare(password, usuario.password, (err, result) => {
       if (result) {
         const token = jwt.sign(
-          { id: usuario.id, nombre: usuario.nombre },
+          {
+            id: usuario.id,
+            nombre: usuario.nombre,
+            tipo: usuario.tipo // 👈 se agrega tipo al token
+          },
           SECRET_KEY,
           { expiresIn: '2h' }
         )
-        res.json({ message: 'Login exitoso', token })
+
+        res.json({
+          message: 'Login exitoso',
+          token,
+          tipo: usuario.tipo // 👈 se agrega tipo a la respuesta también
+        })
       } else {
         res.status(401).json({ error: 'Contraseña incorrecta' })
       }
     })
   })
 }
+
 
 module.exports = { register, login }
