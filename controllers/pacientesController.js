@@ -7,50 +7,67 @@ const CustomStatusMessage = require('../models/CustomStatusMessage')
 const obtenerPerfilPaciente = (req, res) => {
   const idUsuario = req.user.id
 
-  db.get(
-    `SELECT id, nombre, sexo, fecha_nac, telefono, email FROM usuario WHERE id = ? AND tipo = 'paciente'`,
-    [idUsuario],
-    (err, row) => {
-      if (err)
-        return res
-          .status(500)
-          .json(ErrorMessage.from('Error al obtener perfil'))
+  const query = `
+    SELECT 
+      u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email,
+      pi.grupo_sanguineo, pi.obra_social
+    FROM usuario u
+    LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
+    WHERE u.id = ? AND u.tipo = 'paciente'
+  `
 
-      if (!row)
-        return res
-          .status(404)
-          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
+  db.get(query, [idUsuario], (err, row) => {
+    if (err)
+      return res
+        .status(500)
+        .json(ErrorMessage.from('Error al obtener perfil'))
 
-      res.status(200).json(ResponseMessage.from(row))
-    }
-  )
+    if (!row)
+      return res
+        .status(404)
+        .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
+
+    res.status(200).json(ResponseMessage.from(row))
+  })
 }
+
 
 // Actualizar perfil del paciente (solo el mismo paciente)
 const actualizarPerfilPaciente = (req, res) => {
   const idUsuario = req.user.id
-  const { nombre, sexo, fecha_nac, telefono } = req.body
+  const { nombre, sexo, fecha_nac, telefono, email, grupo_sanguineo, obra_social } = req.body
 
   db.run(
-    `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ? AND tipo = 'paciente'`,
-    [nombre, sexo, fecha_nac, telefono, idUsuario],
+    `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ? AND tipo = 'paciente'`,
+    [nombre, sexo, fecha_nac, telefono, email, idUsuario],
     function (err) {
       if (err)
         return res
           .status(500)
-          .json(ErrorMessage.from('Error al actualizar perfil'))
+          .json(ErrorMessage.from('Error al actualizar datos del paciente'))
 
       if (this.changes === 0)
-        return res.status(404).json(
-          CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios')
-        )
+        return res
+          .status(404)
+          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios en usuario'))
 
-      res
-        .status(200)
-        .json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }))
+      // Actualizar datos adicionales
+      db.run(
+        `UPDATE paciente_info SET grupo_sanguineo = ?, obra_social = ? WHERE usuario_id = ?`,
+        [grupo_sanguineo, obra_social, idUsuario],
+        function (err2) {
+          if (err2)
+            return res
+              .status(500)
+              .json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'))
+
+          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }))
+        }
+      )
     }
   )
 }
+
 
 // Ver historia clínica del propio paciente
 const verMiHistoriaClinica = (req, res) => {

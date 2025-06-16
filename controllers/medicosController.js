@@ -7,28 +7,50 @@ const CustomStatusMessage = require('../models/CustomStatusMessage')
 const obtenerPerfil = (req, res) => {
   const idUsuario = req.user.id
 
-  db.get(`SELECT id, nombre, sexo, fecha_nac, telefono, tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err) return res.status(500).json(ErrorMessage.from('Error al obtener perfil'))
+  const query = `
+    SELECT 
+      u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, u.tipo,
+      mi.matricula, mi.consultorio, mi.especialidad_id,
+      e.nombre AS especialidad
+    FROM usuario u
+    LEFT JOIN medico_info mi ON u.id = mi.usuario_id
+    LEFT JOIN especialidad e ON mi.especialidad_id = e.id
+    WHERE u.id = ?
+  `
+
+  db.get(query, [idUsuario], (err, row) => {
+    if (err) return res.status(500).json(ErrorMessage.from('Error al obtener perfil del médico'))
+    if (!row) return res.status(404).json(CustomStatusMessage.from(null, 404, 'Médico no encontrado'))
     res.status(200).json(ResponseMessage.from(row))
   })
 }
 
-// Actualizar perfil del usuario
+
 const actualizarPerfil = (req, res) => {
   const idUsuario = req.user.id
-  const { nombre, sexo, fecha_nac, telefono } = req.body
+  const { nombre, sexo, fecha_nac, telefono, matricula, consultorio, especialidad_id } = req.body
 
+  // Actualizamos tabla usuario
   db.run(`UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ?`,
     [nombre, sexo, fecha_nac, telefono, idUsuario],
     function (err) {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos'))
+      if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos del usuario'))
       if (this.changes === 0) {
         return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'))
       }
-      res.status(200).json(ResponseMessage.from({ message: 'Datos actualizados correctamente' }))
+
+      // Actualizamos tabla medico_info
+      db.run(`UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
+        [matricula, consultorio, especialidad_id, idUsuario],
+        function (err) {
+          if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos del médico'))
+          res.status(200).json(ResponseMessage.from({ message: 'Perfil del médico actualizado correctamente' }))
+        }
+      )
     }
   )
 }
+
 
 // Obtener todos los pacientes (médico)
 const allPacientes = (req, res) => {
