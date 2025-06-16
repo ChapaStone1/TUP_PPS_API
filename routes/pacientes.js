@@ -3,7 +3,6 @@ const router = express.Router()
 const verificarToken = require('../middlewares/auth')
 const controller = require('../controllers/pacientesController')
 
-// 🔐 Todas las rutas requieren login
 router.use(verificarToken)
 
 // GET /mi-perfil  -> Obtener perfil del paciente logueado
