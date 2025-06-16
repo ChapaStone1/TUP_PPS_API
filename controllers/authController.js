@@ -3,9 +3,9 @@ const db = require('../db/db')
 const jwt = require('jsonwebtoken')
 const SECRET_KEY = process.env.SECRET_KEY
 
-const ResponseMessage = require('../utils/ResponseMessage')
-const ErrorMessage = require('../utils/ErrorMessage')
-const CustomStatusMessage = require('../utils/CustomStatusMessage')
+const ResponseMessage = require('../models/ResponseMessage')
+const ErrorMessage = require('../models/ErrorMessage')
+const CustomStatusMessage = require('../models/CustomStatusMessage')
 
 // Registrar solo pacientes
 const register = (req, res) => {
