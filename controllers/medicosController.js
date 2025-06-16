@@ -26,6 +26,40 @@ const actualizarPerfil = (req, res) => {
 }
 
 // Buscar paciente por DNI (requiere ser médico o admin)
+const allPacientes = (req, res) => {
+  const idUsuario = req.user.id; // ID del usuario autenticado
+
+  // Verificamos que el usuario sea médico
+  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
+    if (err || !row) {
+      return res.status(500).json({ error: 'Error al verificar permisos' });
+    }
+
+    if (row.tipo !== 'medico') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    // Si es médico, traemos todos los pacientes
+    db.all(`
+      SELECT 
+        u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
+        pi.grupo_sanguineo, pi.obra_social
+      FROM usuario u
+      LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
+      WHERE u.tipo = 'paciente'
+    `, [], (err, pacientes) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al obtener los pacientes' });
+      }
+
+      res.json(pacientes); // Devuelve array vacío si no hay ninguno
+    });
+  });
+};
+
+
+
+// Buscar paciente por DNI (requiere ser médico o admin)
 const buscarPacientePorDNI = (req, res) => {
   const idUsuario = req.user.id
   const { dni } = req.params
@@ -160,6 +194,7 @@ module.exports = {
   actualizarPerfil,
   cargarMedico,
   cargarConsulta,
+  allPacientes,
   buscarPacientePorDNI,
   eliminarPaciente,
   verHistoriaClinica
