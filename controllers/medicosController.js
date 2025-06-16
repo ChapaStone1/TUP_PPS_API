@@ -1,12 +1,15 @@
 const db = require('../db/db')
+const ResponseMessage = require('../models/ResponseMessage')
+const ErrorMessage = require('../models/ErrorMessage')
+const CustomStatusMessage = require('../models/CustomStatusMessage')
 
-// Obtener perfil del usuario (médico o paciente)
+// Obtener perfil del usuario (médico)
 const obtenerPerfil = (req, res) => {
   const idUsuario = req.user.id
 
   db.get(`SELECT id, nombre, sexo, fecha_nac, telefono, tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err) return res.status(500).json({ error: 'Error al obtener perfil' })
-    res.json(row)
+    if (err) return res.status(500).json(ErrorMessage.from('Error al obtener perfil'))
+    res.status(200).json(ResponseMessage.from(row))
   })
 }
 
@@ -18,28 +21,23 @@ const actualizarPerfil = (req, res) => {
   db.run(`UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ?`,
     [nombre, sexo, fecha_nac, telefono, idUsuario],
     function (err) {
-      if (err) return res.status(500).json({ error: 'Error al actualizar datos' })
-      if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado' })
-      res.json({ message: 'Datos actualizados correctamente' })
+      if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos'))
+      if (this.changes === 0) {
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'))
+      }
+      res.status(200).json(ResponseMessage.from({ message: 'Datos actualizados correctamente' }))
     }
   )
 }
 
-// Buscar paciente por DNI (requiere ser médico o admin)
+// Obtener todos los pacientes (médico)
 const allPacientes = (req, res) => {
-  const idUsuario = req.user.id; // ID del usuario autenticado
+  const idUsuario = req.user.id
 
-  // Verificamos que el usuario sea médico
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err || !row) {
-      return res.status(500).json({ error: 'Error al verificar permisos' });
-    }
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
+    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
-    if (row.tipo !== 'medico') {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
-
-    // Si es médico, traemos todos los pacientes
     db.all(`
       SELECT 
         u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
@@ -48,28 +46,20 @@ const allPacientes = (req, res) => {
       LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
       WHERE u.tipo = 'paciente'
     `, [], (err, pacientes) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error al obtener los pacientes' });
-      }
+      if (err) return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'))
+      res.status(200).json(ResponseMessage.from(pacientes))
+    })
+  })
+}
 
-      res.json(pacientes); // Devuelve array vacío si no hay ninguno
-    });
-  });
-};
-
-
-
-// Buscar paciente por DNI (requiere ser médico o admin)
+// Buscar paciente por DNI (médico)
 const buscarPacientePorDNI = (req, res) => {
   const idUsuario = req.user.id
   const { dni } = req.params
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err || !row) return res.status(500).json({ error: 'Error al verificar permisos' })
-
-    if (row.tipo !== 'medico') {
-      return res.status(403).json({ error: 'No autorizado' })
-    }
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
+    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.get(`
       SELECT u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, pi.grupo_sanguineo, pi.obra_social
@@ -77,77 +67,78 @@ const buscarPacientePorDNI = (req, res) => {
       LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
       WHERE u.dni = ? AND u.tipo = 'paciente'
     `, [dni], (err, paciente) => {
-      if (err) return res.status(500).json({ error: 'Error al buscar paciente' })
-      if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado' })
-      res.json(paciente)
+      if (err) return res.status(500).json(ErrorMessage.from('Error al buscar paciente'))
+      if (!paciente) return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
+      res.status(200).json(ResponseMessage.from(paciente))
     })
   })
 }
 
-
-// Crear médico (solo admin)
+// Crear médico (admin)
 const cargarMedico = (req, res) => {
   const idAdmin = req.user.id
   const { nombre, dni, sexo, fecha_nac, telefono, email, password, matricula, consultorio, especialidad_id } = req.body
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
-    if (err || !row) return res.status(500).json({ error: 'Error al verificar permisos' })
-    if (row.tipo !== 'admin') return res.status(403).json({ error: 'No autorizado' })
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
+    if (row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.run(`
       INSERT INTO usuario (nombre, dni, sexo, fecha_nac, telefono, tipo, email, password)
       VALUES (?, ?, ?, ?, ?, 'medico', ?, ?)
     `, [nombre, dni, sexo, fecha_nac, telefono, email, password], function (err) {
-      if (err) return res.status(500).json({ error: 'Error al registrar médico' })
+      if (err) return res.status(500).json(ErrorMessage.from('Error al registrar médico'))
       const medicoId = this.lastID
 
       db.run(`
         INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
         VALUES (?, ?, ?, ?)
       `, [medicoId, matricula, consultorio, especialidad_id], function (err) {
-        if (err) return res.status(500).json({ error: 'Error al guardar info adicional del médico' })
-        res.status(201).json({ message: 'Médico creado correctamente', id: medicoId })
+        if (err) return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'))
+        res.status(201).json(ResponseMessage.from({ message: 'Médico creado correctamente', id: medicoId }, 201))
       })
     })
   })
 }
 
-// Eliminar paciente (solo admin)
+// Eliminar paciente (admin)
 const eliminarPaciente = (req, res) => {
   const idAdmin = req.user.id
   const idPaciente = req.params.id
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
-    if (err || !row) return res.status(500).json({ error: 'Error al verificar permisos' })
-    if (row.tipo !== 'admin') return res.status(403).json({ error: 'No autorizado' })
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
+    if (row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.run(`DELETE FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idPaciente], function (err) {
-      if (err) return res.status(500).json({ error: 'Error al eliminar paciente' })
-      if (this.changes === 0) return res.status(404).json({ error: 'Paciente no encontrado' })
-      res.json({ message: 'Paciente eliminado correctamente' })
+      if (err) return res.status(500).json(ErrorMessage.from('Error al eliminar paciente'))
+      if (this.changes === 0)
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
+
+      res.status(200).json(ResponseMessage.from({ message: 'Paciente eliminado correctamente' }))
     })
   })
 }
 
-// Cargar consulta médica en historia clínica
+// Cargar consulta médica (médico)
 const cargarConsulta = (req, res) => {
   const idMedico = req.user.id
   const idPaciente = req.params.id
   const { nota, medicacion } = req.body
 
   if (!nota || !medicacion) {
-    return res.status(400).json({ error: 'Debe completar los campos nota y medicación' })
+    return res.status(400).json(CustomStatusMessage.from(null, 400, 'Debe completar los campos nota y medicación'))
   }
 
-  // Verificar que el usuario sea médico
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idMedico], (err, medico) => {
-    if (err || !medico) return res.status(500).json({ error: 'Error al verificar permisos del médico' })
-    if (medico.tipo !== 'medico') return res.status(403).json({ error: 'Solo los médicos pueden cargar consultas' })
+    if (err || !medico) return res.status(500).json(ErrorMessage.from('Error al verificar permisos del médico'))
+    if (medico.tipo !== 'medico')
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'Solo los médicos pueden cargar consultas'))
 
-    // Verificar que el paciente exista y sea de tipo 'paciente'
     db.get(`SELECT id FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idPaciente], (err, paciente) => {
-      if (err) return res.status(500).json({ error: 'Error al verificar paciente' })
-      if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado o no válido' })
+      if (err) return res.status(500).json(ErrorMessage.from('Error al verificar paciente'))
+      if (!paciente)
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o no válido'))
 
       const fecha = new Date().toISOString().split('T')[0]
 
@@ -155,25 +146,24 @@ const cargarConsulta = (req, res) => {
         INSERT INTO historia_clinica (usuario_id, medico_id, fecha, medicacion, nota)
         VALUES (?, ?, ?, ?, ?)
       `, [idPaciente, idMedico, fecha, medicacion, nota], function (err) {
-        if (err) return res.status(500).json({ error: 'Error al cargar la consulta' })
-        res.status(201).json({ message: 'Consulta agregada correctamente', id: this.lastID })
+        if (err) return res.status(500).json(ErrorMessage.from('Error al cargar la consulta'))
+        res.status(201).json(ResponseMessage.from({ message: 'Consulta agregada correctamente', id: this.lastID }, 201))
       })
     })
   })
 }
 
-
-// Ver historia clínica de un paciente (médico o el propio paciente)
+// Ver historia clínica de un paciente (médico o el mismo paciente)
 const verHistoriaClinica = (req, res) => {
   const idUsuario = req.user.id
   const idPaciente = req.params.id
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err || !row) return res.status(500).json({ error: 'Error al verificar permisos' })
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
     const tipo = row.tipo
 
     if (tipo !== 'medico' && idUsuario !== parseInt(idPaciente)) {
-      return res.status(403).json({ error: 'No autorizado' })
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
     }
 
     db.all(`
@@ -183,8 +173,8 @@ const verHistoriaClinica = (req, res) => {
       WHERE hc.usuario_id = ?
       ORDER BY fecha DESC
     `, [idPaciente], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Error al obtener historia clínica' })
-      res.json(rows)
+      if (err) return res.status(500).json(ErrorMessage.from('Error al obtener historia clínica'))
+      res.status(200).json(ResponseMessage.from(rows))
     })
   })
 }
