@@ -27,29 +27,65 @@ const obtenerPerfil = (req, res) => {
 
 
 const actualizarPerfil = (req, res) => {
-  const idUsuario = req.user.id
-  const { nombre, sexo, fecha_nac, telefono, matricula, consultorio, especialidad_id } = req.body
+  const idUsuario = req.user.id;
+  const {
+    nombre,
+    sexo,
+    fecha_nac,
+    telefono,
+    matricula,
+    consultorio,
+    especialidad_id,
+    password
+  } = req.body;
 
-  // Actualizamos tabla usuario
-  db.run(`UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ?`,
-    [nombre, sexo, fecha_nac, telefono, idUsuario],
-    function (err) {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos del usuario'))
-      if (this.changes === 0) {
-        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'))
+  if (password && password.trim() !== '') {
+  bcrypt.hash(password, 6, (err, hash) => {
+    if (err) {
+      return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
+    }
+    actualizarUsuario(hash);
+  });
+  } else {
+    actualizarUsuario(); // sin cambiar contraseña
+  }
+
+
+  const actualizarUsuario = (hash = null) => {
+    const queryUsuario = hash
+      ? `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, password = ? WHERE id = ?`
+      : `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ?`;
+
+    const paramsUsuario = hash
+      ? [nombre, sexo, fecha_nac, telefono, hash, idUsuario]
+      : [nombre, sexo, fecha_nac, telefono, idUsuario];
+
+    db.run(queryUsuario, paramsUsuario, function (err) {
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del usuario'));
       }
 
-      // Actualizamos tabla medico_info
-      db.run(`UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
+      if (this.changes === 0) {
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'));
+      }
+
+      db.run(
+        `UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
         [matricula, consultorio, especialidad_id, idUsuario],
         function (err) {
-          if (err) return res.status(500).json(ErrorMessage.from('Error al actualizar datos del médico'))
-          res.status(200).json(ResponseMessage.from({ message: 'Perfil del médico actualizado correctamente' }))
+          if (err) {
+            return res.status(500).json(ErrorMessage.from('Error al actualizar datos del médico'));
+          }
+
+          res
+            .status(200)
+            .json(ResponseMessage.from({ message: 'Perfil del médico actualizado correctamente' }));
         }
-      )
-    }
-  )
+      );
+    });
+  };
 }
+
 
 
 // Obtener todos los pacientes (médico)
