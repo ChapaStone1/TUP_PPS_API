@@ -21,5 +21,6 @@ router.post('/cargar-consulta/:id', controller.cargarConsulta)
 router.delete('/eliminar-pacientes/:id', controller.eliminarPaciente)
 
 router.get('/historia-clinica/:id', controller.verHistoriaClinica)
+router.get('/especialidades', controller.obtenerEspecialidades)
 
 module.exports = router

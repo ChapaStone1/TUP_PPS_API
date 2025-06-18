@@ -49,7 +49,18 @@ const actualizarPerfil = (req, res) => {
   } else {
     actualizarUsuario(); // sin cambiar contraseña
   }
+  
+  // Obtener todas las especialidades
+const obtenerEspecialidades = (req, res) => {
+  const query = `SELECT id, nombre FROM especialidad ORDER BY nombre`
 
+  db.all(query, [], (err, filas) => {
+    if (err) {
+      return res.status(500).json(ErrorMessage.from('Error al obtener las especialidades'))
+    }
+    res.status(200).json(ResponseMessage.from(filas))
+  })
+}
 
   const actualizarUsuario = (hash = null) => {
     const queryUsuario = hash
@@ -240,6 +251,7 @@ const verHistoriaClinica = (req, res) => {
 module.exports = {
   obtenerPerfil,
   actualizarPerfil,
+  obtenerEspecialidades,
   cargarMedico,
   cargarConsulta,
   allPacientes,
