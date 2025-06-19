@@ -62,7 +62,7 @@ const actualizarPerfil = (req, res) => {
   const actualizarUsuario = (hash = null) => {
     const queryUsuario = hash
       ? `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
-      : `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, WHERE id = ?`;
+      : `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ?`;
 
     const paramsUsuario = hash
       ? [nombre, dni, sexo, fecha_nac, telefonoInt, email, hash, idUsuario]
