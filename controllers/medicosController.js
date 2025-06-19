@@ -2,6 +2,7 @@ const db = require('../db/db')
 const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
+const bcrypt = require('bcrypt');
 
 // Obtener perfil del usuario (médico)
 const obtenerPerfil = (req, res) => {
