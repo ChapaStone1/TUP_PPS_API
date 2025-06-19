@@ -30,37 +30,47 @@ const actualizarPerfil = (req, res) => {
   const idUsuario = req.user.id;
   const {
     nombre,
+    dni,
     sexo,
     fecha_nac,
     telefono,
+    email,
+    password,
     matricula,
     consultorio,
-    especialidad_id,
-    password
+    especialidad_id
   } = req.body;
 
+  // Validar que teléfono sea número
+  const telefonoInt = parseInt(telefono);
+  if (isNaN(telefonoInt)) {
+    return res.status(400).json(ErrorMessage.from('El campo "telefono" debe ser un número válido'));
+  }
+
+  // Encriptar contraseña si se manda
   if (password && password.trim() !== '') {
-  bcrypt.hash(password, 6, (err, hash) => {
-    if (err) {
-      return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
-    }
-    actualizarUsuario(hash);
-  });
+    bcrypt.hash(password, 6, (err, hash) => {
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
+      }
+      actualizarUsuario(hash);
+    });
   } else {
     actualizarUsuario(); // sin cambiar contraseña
   }
-  
+
   const actualizarUsuario = (hash = null) => {
     const queryUsuario = hash
-      ? `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, password = ? WHERE id = ?`
-      : `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ? WHERE id = ?`;
+      ? `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
+      : `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, WHERE id = ?`;
 
     const paramsUsuario = hash
-      ? [nombre, sexo, fecha_nac, telefono, hash, idUsuario]
-      : [nombre, sexo, fecha_nac, telefono, idUsuario];
+      ? [nombre, dni, sexo, fecha_nac, telefonoInt, email, hash, idUsuario]
+      : [nombre, dni, sexo, fecha_nac, telefonoInt, email, idUsuario];
 
     db.run(queryUsuario, paramsUsuario, function (err) {
       if (err) {
+        console.error('Error al actualizar usuario:', err);
         return res.status(500).json(ErrorMessage.from('Error al actualizar datos del usuario'));
       }
 
@@ -68,11 +78,13 @@ const actualizarPerfil = (req, res) => {
         return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'));
       }
 
+      // Actualizar info médica
       db.run(
         `UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
         [matricula, consultorio, especialidad_id, idUsuario],
         function (err) {
           if (err) {
+            console.error('Error al actualizar médico:', err);
             return res.status(500).json(ErrorMessage.from('Error al actualizar datos del médico'));
           }
 
@@ -83,7 +95,8 @@ const actualizarPerfil = (req, res) => {
       );
     });
   };
-}
+};
+
 
   // Obtener todas las especialidades
 const obtenerEspecialidades = (req, res) => {
