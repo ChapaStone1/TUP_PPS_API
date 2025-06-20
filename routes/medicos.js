@@ -12,8 +12,8 @@ router.put('/perfil', controller.actualizarPerfil)
 // Buscar paciente por DNI (solo médico)
 router.get('/buscar-paciente/:dni', controller.buscarPacientePorDNI)
 
-// Todos los pacientes (solo médico)
-router.get('/all', controller.allPacientes)
+// Todos los pacientes (solo médico), con ? si se le pasa dni los filtra por query
+router.get('/all-pacientes', controller.allPacientes)
 
 // Crear médico (solo admin)
 router.post('/cargar-medico', controller.cargarMedico)

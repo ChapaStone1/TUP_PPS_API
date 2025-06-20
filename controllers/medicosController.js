@@ -111,27 +111,38 @@ const obtenerEspecialidades = (req, res) => {
   })
 }
 
-// Obtener todos los pacientes (médico)
+// Obtener todos los pacientes (médico) y por query busca por DNI
 const allPacientes = (req, res) => {
-  const idUsuario = req.user.id
+  const idUsuario = req.user.id;
+  const { dni } = req.query; // Captura el query param opcional
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
+    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
-    db.all(`
+    // Armar la query condicionalmente
+    let query = `
       SELECT 
         u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
         pi.grupo_sanguineo, pi.obra_social
       FROM usuario u
       LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
       WHERE u.tipo = 'paciente'
-    `, [], (err, pacientes) => {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'))
-      res.status(200).json(ResponseMessage.from(pacientes))
-    })
-  })
-}
+    `;
+    const params = [];
+
+    if (dni) {
+      query += ' AND u.dni LIKE ?';
+      params.push(`%${dni}%`);
+    }
+
+    db.all(query, params, (err, pacientes) => {
+      if (err) return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
+      res.status(200).json(ResponseMessage.from(pacientes));
+    });
+  });
+};
+
 
 // Buscar paciente por DNI (médico)
 const buscarPacientePorDNI = (req, res) => {
