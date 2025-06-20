@@ -114,13 +114,13 @@ const obtenerEspecialidades = (req, res) => {
 // Obtener todos los pacientes (médico) y por query busca por DNI
 const allPacientes = (req, res) => {
   const idUsuario = req.user.id;
-  const { dni } = req.query; // Captura el query param opcional
+  const { dni, limit } = req.query;
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
     if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
-    // Armar la query condicionalmente
+    // Construcción dinámica del SQL
     let query = `
       SELECT 
         u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
@@ -136,12 +136,50 @@ const allPacientes = (req, res) => {
       params.push(`%${dni}%`);
     }
 
-    db.all(query, params, (err, pacientes) => {
+    query += ' ORDER BY u.nombre'; // orden opcional
+
+    if (limit && !isNaN(parseInt(limit))) {
+      query += ' LIMIT ?';
+      params.push(parseInt(limit));
+    }
+
+    db.all(query, params, async (err, pacientes) => {
       if (err) return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
-      res.status(200).json(ResponseMessage.from(pacientes));
+
+      // Obtener historia clínica para cada paciente (async/await con Promises)
+      // Obtener historia clínica para cada paciente (async/await con Promises)
+      const pacientesConHistoria = await Promise.all(pacientes.map((paciente) => {
+        return new Promise((resolve, reject) => {
+          db.all(`
+            SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
+                  u.id AS medico_id, u.nombre AS medico_nombre
+            FROM historia_clinica hc
+            LEFT JOIN usuario u ON u.id = hc.medico_id
+            WHERE hc.usuario_id = ?
+            ORDER BY hc.fecha DESC
+          `, [paciente.id], (err, historia) => {
+            if (err) return reject(err);
+
+            const historiaFormateada = historia.map(entry => ({
+              id: entry.id,
+              fecha: entry.fecha,
+              medicacion: entry.medicacion,
+              nota: entry.nota,
+              medico: {
+                id: entry.medico_id,
+                nombre: entry.medico_nombre
+              }
+            }));
+
+            resolve({ ...paciente, historia_clinica: historiaFormateada });
+          });
+        });
+      }));
+      res.status(200).json(ResponseMessage.from(pacientesConHistoria));
     });
   });
 };
+
 
 
 // Buscar paciente por DNI (médico)
