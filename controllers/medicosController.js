@@ -114,11 +114,14 @@ const obtenerEspecialidades = (req, res) => {
 // Obtener todos los pacientes (médico) y por query busca por DNI
 const allPacientes = (req, res) => {
   const idUsuario = req.user.id;
-  const { dni, limit } = req.query;
+  const { dni, limit, offset } = req.query;
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
-    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
-    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
+    if (err || !row)
+      return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
+
+    if (row.tipo !== 'medico')
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
     // Construcción dinámica del SQL
     let query = `
@@ -136,49 +139,63 @@ const allPacientes = (req, res) => {
       params.push(`%${dni}%`);
     }
 
-    query += ' ORDER BY u.nombre'; // orden opcional
+    query += ' ORDER BY u.nombre';
 
+    // Limit y offset (paginación)
     if (limit && !isNaN(parseInt(limit))) {
       query += ' LIMIT ?';
       params.push(parseInt(limit));
+
+      if (offset && !isNaN(parseInt(offset))) {
+        query += ' OFFSET ?';
+        params.push(parseInt(offset));
+      }
     }
 
     db.all(query, params, async (err, pacientes) => {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
+      if (err)
+        return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
 
-      // Obtener historia clínica para cada paciente (async/await con Promises)
-      // Obtener historia clínica para cada paciente (async/await con Promises)
-      const pacientesConHistoria = await Promise.all(pacientes.map((paciente) => {
-        return new Promise((resolve, reject) => {
-          db.all(`
-            SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
-                  u.id AS medico_id, u.nombre AS medico_nombre
-            FROM historia_clinica hc
-            LEFT JOIN usuario u ON u.id = hc.medico_id
-            WHERE hc.usuario_id = ?
-            ORDER BY hc.fecha DESC
-          `, [paciente.id], (err, historia) => {
-            if (err) return reject(err);
+      // Historia clínica por paciente
+      const pacientesConHistoria = await Promise.all(
+        pacientes.map((paciente) => {
+          return new Promise((resolve, reject) => {
+            db.all(
+              `
+              SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
+                     u.id AS medico_id, u.nombre AS medico_nombre
+              FROM historia_clinica hc
+              LEFT JOIN usuario u ON u.id = hc.medico_id
+              WHERE hc.usuario_id = ?
+              ORDER BY hc.fecha DESC
+              `,
+              [paciente.id],
+              (err, historia) => {
+                if (err) return reject(err);
 
-            const historiaFormateada = historia.map(entry => ({
-              id: entry.id,
-              fecha: entry.fecha,
-              medicacion: entry.medicacion,
-              nota: entry.nota,
-              medico: {
-                id: entry.medico_id,
-                nombre: entry.medico_nombre
+                const historiaFormateada = historia.map((entry) => ({
+                  id: entry.id,
+                  fecha: entry.fecha,
+                  medicacion: entry.medicacion,
+                  nota: entry.nota,
+                  medico: {
+                    id: entry.medico_id,
+                    nombre: entry.medico_nombre,
+                  },
+                }));
+
+                resolve({ ...paciente, historia_clinica: historiaFormateada });
               }
-            }));
-
-            resolve({ ...paciente, historia_clinica: historiaFormateada });
+            );
           });
-        });
-      }));
+        })
+      );
+
       res.status(200).json(ResponseMessage.from(pacientesConHistoria));
     });
   });
 };
+
 
 
 
