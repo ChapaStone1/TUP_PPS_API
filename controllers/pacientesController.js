@@ -85,9 +85,18 @@ const verMiHistoriaClinica = (req, res) => {
         .json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.all(
-      `SELECT hc.id, hc.fecha, hc.nota, u.nombre AS medico
+      `SELECT 
+        hc.id, 
+        hc.fecha, 
+        hc.nota, 
+        hc.medicacion, 
+        u.nombre AS medico,
+        mi.consultorio,
+        e.nombre AS especialidad
        FROM historia_clinica hc
        LEFT JOIN usuario u ON hc.medico_id = u.id
+       LEFT JOIN medico_info mi ON u.id = mi.usuario_id
+       LEFT JOIN especialidad e ON mi.especialidad_id = e.id
        WHERE hc.usuario_id = ?
        ORDER BY hc.fecha DESC`,
       [idUsuario],
@@ -102,6 +111,7 @@ const verMiHistoriaClinica = (req, res) => {
     )
   })
 }
+
 
 module.exports = {
   obtenerPerfilPaciente,
