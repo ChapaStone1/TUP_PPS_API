@@ -115,6 +115,7 @@ const obtenerEspecialidades = (req, res) => {
 const allPacientes = (req, res) => {
   const idUsuario = req.user.id;
   const { dni, limit, offset } = req.query;
+  console.log("Fetching pacientes con limit:", req.query.limit, "y offset:", req.query.offset);
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row)
