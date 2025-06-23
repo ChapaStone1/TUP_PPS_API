@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 
 // Ruta de la base de datos
-const dbPath = path.resolve(__dirname, 'historiaClinicaConsultorios.db')
+const dbPath = path.resolve(__dirname, 'ConsultorioUTN.db')
 
 // Crear carpeta si no existe
 if (!fs.existsSync(path.dirname(dbPath))) {
@@ -15,7 +15,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error al conectar con SQLite:', err.message)
   } else {
-    console.log('Conectado a la base de datos "historiaClinicaConsultorios.db".')
+    console.log('Conectado a la base de datos "ConsultorioUTN".')
   }
 })
 
