@@ -34,39 +34,52 @@ const obtenerPerfilPaciente = (req, res) => {
 
 // Actualizar perfil del paciente (solo el mismo paciente)
 const actualizarPerfilPaciente = (req, res) => {
-  const idUsuario = req.user.id
-  const { nombre, sexo, fecha_nac, telefono, email, grupo_sanguineo, obra_social } = req.body
+  const idUsuario = req.user.id;
+  const {
+    nombre,
+    sexo,
+    fecha_nac,
+    telefono,
+    email,
+    password, // <-- Agregado
+    grupo_sanguineo,
+    obra_social
+  } = req.body;
 
   db.run(
-    `UPDATE usuario SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ? AND tipo = 'paciente'`,
-    [nombre, sexo, fecha_nac, telefono, email, idUsuario],
+    `UPDATE usuario
+     SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ?
+     WHERE id = ? AND tipo = 'paciente'`,
+    [nombre, sexo, fecha_nac, telefono, email, password, idUsuario], // <-- Agregado `password`
     function (err) {
       if (err)
         return res
           .status(500)
-          .json(ErrorMessage.from('Error al actualizar datos del paciente'))
+          .json(ErrorMessage.from('Error al actualizar datos del paciente'));
 
       if (this.changes === 0)
         return res
           .status(404)
-          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios en usuario'))
+          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios en usuario'));
 
-      // Actualizar datos adicionales
       db.run(
-        `UPDATE paciente_info SET grupo_sanguineo = ?, obra_social = ? WHERE usuario_id = ?`,
+        `UPDATE paciente_info
+         SET grupo_sanguineo = ?, obra_social = ?
+         WHERE usuario_id = ?`,
         [grupo_sanguineo, obra_social, idUsuario],
         function (err2) {
           if (err2)
             return res
               .status(500)
-              .json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'))
+              .json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'));
 
-          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }))
+          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }));
         }
-      )
+      );
     }
-  )
-}
+  );
+};
+
 
 
 // Ver historia clínica del propio paciente

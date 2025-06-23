@@ -6,20 +6,18 @@ const controller = require('../controllers/medicosController')
 router.use(verificarToken)
 
 // Perfil del usuario (médico)
-router.get('/perfil', controller.obtenerPerfil)
-router.put('/perfil', controller.actualizarPerfil)
+router.get('/mi-perfil', controller.obtenerPerfil)
+router.put('/mi-perfil', controller.actualizarPerfil)
 
 // Buscar paciente por DNI (solo médico)
 router.get('/buscar-paciente/:dni', controller.buscarPacientePorDNI)
-
+router.delete('/eliminar-paciente/:id', controller.eliminarPaciente)
 // Todos los pacientes (solo médico), con ? si se le pasa dni los filtra por query
 router.get('/all-pacientes', controller.allPacientes)
 
 // Crear médico (solo admin)
 router.post('/cargar-medico', controller.cargarMedico)
 router.post('/cargar-consulta/:id', controller.cargarConsulta)
-router.delete('/eliminar-pacientes/:id', controller.eliminarPaciente)
-
 router.get('/historia-clinica/:id', controller.verHistoriaClinica)
 router.get('/especialidades', controller.obtenerEspecialidades)
 
