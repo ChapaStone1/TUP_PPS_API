@@ -229,7 +229,7 @@ const cargarMedico = (req, res) => {
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.run(`
       INSERT INTO usuario (nombre, dni, sexo, fecha_nac, telefono, tipo, email, password)
@@ -256,7 +256,7 @@ const eliminarPaciente = (req, res) => {
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.run(`DELETE FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idPaciente], function (err) {
       if (err) return res.status(500).json(ErrorMessage.from('Error al eliminar paciente'))
