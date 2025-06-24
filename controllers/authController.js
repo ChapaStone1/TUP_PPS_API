@@ -11,6 +11,7 @@ const CustomStatusMessage = require('../models/CustomStatusMessage')
 const register = (req, res) => {
   const {
     nombre,
+    apellido,
     dni,
     sexo,
     fecha_nac,
@@ -21,7 +22,11 @@ const register = (req, res) => {
     obra_social
   } = req.body
 
-  if (!nombre || !dni || !sexo || !fecha_nac || !email || !telefono || !password || !grupo_sanguineo || !obra_social) {
+  // Validar campos obligatorios
+  if (
+    !nombre || !apellido || !dni || !sexo || !fecha_nac ||
+    !email || !telefono || !password || !grupo_sanguineo || !obra_social
+  ) {
     return res.status(400).json(
       CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
     )
@@ -32,11 +37,12 @@ const register = (req, res) => {
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
 
-    db.run(`
-      INSERT INTO usuario (nombre, dni, sexo, fecha_nac, telefono, tipo, email, password)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    db.run(
+      `
+      INSERT INTO usuario (nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, tipo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-      [nombre, dni, sexo, fecha_nac, telefono, tipo, email, hashedPassword],
+      [nombre, apellido, dni, sexo, fecha_nac, telefono, email, hashedPassword, tipo],
       function (err) {
         if (err) {
           return res.status(400).json(
@@ -46,7 +52,8 @@ const register = (req, res) => {
 
         const pacienteId = this.lastID
 
-        db.run(`
+        db.run(
+          `
           INSERT INTO paciente_info (usuario_id, grupo_sanguineo, obra_social)
           VALUES (?, ?, ?)
         `,
@@ -57,7 +64,10 @@ const register = (req, res) => {
             }
 
             res.status(201).json(
-              ResponseMessage.from({ message: 'Paciente registrado exitosamente', usuarioId: pacienteId }, 201)
+              ResponseMessage.from({
+                message: 'Paciente registrado exitosamente',
+                usuarioId: pacienteId
+              }, 201)
             )
           }
         )
@@ -86,6 +96,7 @@ const login = (req, res) => {
           {
             id: usuario.id,
             nombre: usuario.nombre,
+            apellido: usuario.apellido,
             tipo: usuario.tipo
           },
           SECRET_KEY,

@@ -2,6 +2,7 @@ const db = require('../db/db')
 const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
+const bcrypt = require('bcrypt')
 
 // Obtener perfil del paciente (solo si es paciente)
 const obtenerPerfilPaciente = (req, res) => {
@@ -9,7 +10,7 @@ const obtenerPerfilPaciente = (req, res) => {
 
   const query = `
     SELECT 
-      u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email,
+      u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email,
       pi.grupo_sanguineo, pi.obra_social
     FROM usuario u
     LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
@@ -18,69 +19,71 @@ const obtenerPerfilPaciente = (req, res) => {
 
   db.get(query, [idUsuario], (err, row) => {
     if (err)
-      return res
-        .status(500)
-        .json(ErrorMessage.from('Error al obtener perfil'))
+      return res.status(500).json(ErrorMessage.from('Error al obtener perfil'))
 
     if (!row)
-      return res
-        .status(404)
-        .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
+      return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
 
     res.status(200).json(ResponseMessage.from(row))
   })
 }
 
-
 // Actualizar perfil del paciente (solo el mismo paciente)
 const actualizarPerfilPaciente = (req, res) => {
-  const idUsuario = req.user.id;
+  const idUsuario = req.user.id
   const {
     nombre,
+    apellido,
     sexo,
     fecha_nac,
     telefono,
     email,
-    password, // <-- Agregado
+    password,
     grupo_sanguineo,
     obra_social
-  } = req.body;
+  } = req.body
 
-  db.run(
-    `UPDATE usuario
-     SET nombre = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ?
-     WHERE id = ? AND tipo = 'paciente'`,
-    [nombre, sexo, fecha_nac, telefono, email, password, idUsuario], // <-- Agregado `password`
-    function (err) {
-      if (err)
-        return res
-          .status(500)
-          .json(ErrorMessage.from('Error al actualizar datos del paciente'));
+  const actualizarUsuario = (hash = null) => {
+    const queryUsuario = hash
+      ? `UPDATE usuario SET nombre = ?, apellido = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ? AND tipo = 'paciente'`
+      : `UPDATE usuario SET nombre = ?, apellido = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ? AND tipo = 'paciente'`
 
-      if (this.changes === 0)
-        return res
-          .status(404)
-          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios en usuario'));
+    const paramsUsuario = hash
+      ? [nombre, apellido, sexo, fecha_nac, telefono, email, hash, idUsuario]
+      : [nombre, apellido, sexo, fecha_nac, telefono, email, idUsuario]
+
+    db.run(queryUsuario, paramsUsuario, function (err) {
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del paciente'))
+      }
+      if (this.changes === 0) {
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios'))
+      }
 
       db.run(
-        `UPDATE paciente_info
-         SET grupo_sanguineo = ?, obra_social = ?
-         WHERE usuario_id = ?`,
+        `UPDATE paciente_info SET grupo_sanguineo = ?, obra_social = ? WHERE usuario_id = ?`,
         [grupo_sanguineo, obra_social, idUsuario],
         function (err2) {
-          if (err2)
-            return res
-              .status(500)
-              .json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'));
-
-          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }));
+          if (err2) {
+            return res.status(500).json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'))
+          }
+          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }))
         }
-      );
-    }
-  );
-};
+      )
+    })
+  }
 
-
+  if (password && password.trim() !== '') {
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
+      }
+      actualizarUsuario(hash)
+    })
+  } else {
+    actualizarUsuario()
+  }
+}
 
 // Ver historia clínica del propio paciente
 const verMiHistoriaClinica = (req, res) => {
@@ -88,24 +91,21 @@ const verMiHistoriaClinica = (req, res) => {
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row)
-      return res
-        .status(500)
-        .json(ErrorMessage.from('Error al verificar tipo de usuario'))
+      return res.status(500).json(ErrorMessage.from('Error al verificar tipo de usuario'))
 
     if (row.tipo !== 'paciente')
-      return res
-        .status(403)
-        .json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.all(
       `SELECT 
-        hc.id, 
-        hc.fecha, 
-        hc.nota, 
-        hc.medicacion, 
-        u.nombre AS medico,
-        mi.consultorio,
-        e.nombre AS especialidad
+         hc.id, 
+         hc.fecha, 
+         hc.nota, 
+         hc.medicacion, 
+         u.nombre AS medico_nombre,
+         u.apellido AS medico_apellido,
+         mi.consultorio,
+         e.nombre AS especialidad
        FROM historia_clinica hc
        LEFT JOIN usuario u ON hc.medico_id = u.id
        LEFT JOIN medico_info mi ON u.id = mi.usuario_id
@@ -115,16 +115,13 @@ const verMiHistoriaClinica = (req, res) => {
       [idUsuario],
       (err, rows) => {
         if (err)
-          return res
-            .status(500)
-            .json(ErrorMessage.from('Error al obtener historia clínica'))
+          return res.status(500).json(ErrorMessage.from('Error al obtener historia clínica'))
 
         res.status(200).json(ResponseMessage.from(rows))
       }
     )
   })
 }
-
 
 module.exports = {
   obtenerPerfilPaciente,

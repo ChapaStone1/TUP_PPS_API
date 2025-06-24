@@ -27,12 +27,13 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS usuario (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL,
     dni TEXT NOT NULL UNIQUE,
     sexo TEXT CHECK(sexo IN ('M', 'F')) NOT NULL,
     fecha_nac TEXT,
-    telefono INTEGER,
+    telefono TEXT,
     email TEXT UNIQUE,
-    password TEXT,
+    password TEXT NOT NULL,
     tipo TEXT CHECK(tipo IN ('paciente', 'medico')) NOT NULL
   )`)
   // Tabla de especialidades
@@ -43,18 +44,18 @@ db.serialize(() => {
   // Información adicional de médicos
   db.run(`CREATE TABLE IF NOT EXISTS medico_info (
     usuario_id INTEGER PRIMARY KEY,
-    matricula TEXT,
-    consultorio TEXT,
+    matricula INTEGER NOT NULL UNIQUE,
+    consultorio TEXT NOT NULL,
     especialidad_id INTEGER,
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
     FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
   )`)
   // Información adicional de pacientes
   db.run(`CREATE TABLE IF NOT EXISTS paciente_info (
     usuario_id INTEGER PRIMARY KEY,
-    grupo_sanguineo TEXT,
+    grupo_sanguineo TEXT CHECK(grupo_sanguineo IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
     obra_social TEXT,
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
   )`)
   // Historia clínica
   db.run(`CREATE TABLE IF NOT EXISTS historia_clinica (
@@ -64,8 +65,8 @@ db.serialize(() => {
     fecha TEXT NOT NULL,
     medicacion TEXT NOT NULL,
     nota TEXT NOT NULL,
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-    FOREIGN KEY (medico_id) REFERENCES usuario(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    FOREIGN KEY (medico_id) REFERENCES usuario(id) ON DELETE SET NULL
   )`)
 })
 

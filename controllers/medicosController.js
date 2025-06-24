@@ -2,7 +2,7 @@ const db = require('../db/db')
 const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt')
 
 // Obtener perfil del usuario (médico)
 const obtenerPerfil = (req, res) => {
@@ -10,7 +10,7 @@ const obtenerPerfil = (req, res) => {
 
   const query = `
     SELECT 
-      u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, u.tipo,
+      u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, u.tipo,
       mi.matricula, mi.consultorio, mi.especialidad_id,
       e.nombre AS especialidad
     FROM usuario u
@@ -26,11 +26,11 @@ const obtenerPerfil = (req, res) => {
   })
 }
 
-
 const actualizarPerfil = (req, res) => {
   const idUsuario = req.user.id;
   const {
     nombre,
+    apellido,
     dni,
     sexo,
     fecha_nac,
@@ -42,32 +42,19 @@ const actualizarPerfil = (req, res) => {
     especialidad_id
   } = req.body;
 
-  // Validar que teléfono sea número
   const telefonoInt = parseInt(telefono);
   if (isNaN(telefonoInt)) {
     return res.status(400).json(ErrorMessage.from('El campo "telefono" debe ser un número válido'));
   }
 
-  // Encriptar contraseña si se manda
-  if (password && password.trim() !== '') {
-    bcrypt.hash(password, 6, (err, hash) => {
-      if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
-      }
-      actualizarUsuario(hash);
-    });
-  } else {
-    actualizarUsuario(); // sin cambiar contraseña
-  }
-
   const actualizarUsuario = (hash = null) => {
     const queryUsuario = hash
-      ? `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
-      : `UPDATE usuario SET nombre = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ?`;
+      ? `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
+      : `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ?`;
 
     const paramsUsuario = hash
-      ? [nombre, dni, sexo, fecha_nac, telefonoInt, email, hash, idUsuario]
-      : [nombre, dni, sexo, fecha_nac, telefonoInt, email, idUsuario];
+      ? [nombre, apellido, dni, sexo, fecha_nac, telefonoInt, email, hash, idUsuario]
+      : [nombre, apellido, dni, sexo, fecha_nac, telefonoInt, email, idUsuario];
 
     db.run(queryUsuario, paramsUsuario, function (err) {
       if (err) {
@@ -79,7 +66,6 @@ const actualizarPerfil = (req, res) => {
         return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'));
       }
 
-      // Actualizar info médica
       db.run(
         `UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
         [matricula, consultorio, especialidad_id, idUsuario],
@@ -96,10 +82,20 @@ const actualizarPerfil = (req, res) => {
       );
     });
   };
-};
 
+  if (password && password.trim() !== '') {
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
+      }
+      actualizarUsuario(hash);
+    });
+  } else {
+    actualizarUsuario();
+  }
+}
 
-  // Obtener todas las especialidades
+// Obtener todas las especialidades
 const obtenerEspecialidades = (req, res) => {
   const query = `SELECT id, nombre FROM especialidad ORDER BY nombre`
 
@@ -115,7 +111,6 @@ const obtenerEspecialidades = (req, res) => {
 const allPacientes = (req, res) => {
   const idUsuario = req.user.id;
   const { dni, limit, offset } = req.query;
-  console.log("Fetching pacientes con limit:", req.query.limit, "y offset:", req.query.offset);
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row)
@@ -124,10 +119,9 @@ const allPacientes = (req, res) => {
     if (row.tipo !== 'medico')
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
-    // Construcción dinámica del SQL
     let query = `
       SELECT 
-        u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
+        u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, 
         pi.grupo_sanguineo, pi.obra_social
       FROM usuario u
       LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
@@ -142,7 +136,6 @@ const allPacientes = (req, res) => {
 
     query += ' ORDER BY u.nombre';
 
-    // Limit y offset (paginación)
     if (limit && !isNaN(parseInt(limit))) {
       query += ' LIMIT ?';
       params.push(parseInt(limit));
@@ -157,14 +150,13 @@ const allPacientes = (req, res) => {
       if (err)
         return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
 
-      // Historia clínica por paciente
       const pacientesConHistoria = await Promise.all(
         pacientes.map((paciente) => {
           return new Promise((resolve, reject) => {
             db.all(
               `
               SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
-                     u.id AS medico_id, u.nombre AS medico_nombre
+                     u.id AS medico_id, u.nombre AS medico_nombre, u.apellido AS medico_apellido
               FROM historia_clinica hc
               LEFT JOIN usuario u ON u.id = hc.medico_id
               WHERE hc.usuario_id = ?
@@ -182,6 +174,7 @@ const allPacientes = (req, res) => {
                   medico: {
                     id: entry.medico_id,
                     nombre: entry.medico_nombre,
+                    apellido: entry.medico_apellido
                   },
                 }));
 
@@ -195,10 +188,7 @@ const allPacientes = (req, res) => {
       res.status(200).json(ResponseMessage.from(pacientesConHistoria));
     });
   });
-};
-
-
-
+}
 
 // Buscar paciente por DNI (médico)
 const buscarPacientePorDNI = (req, res) => {
@@ -210,7 +200,7 @@ const buscarPacientePorDNI = (req, res) => {
     if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.get(`
-      SELECT u.id, u.nombre, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, pi.grupo_sanguineo, pi.obra_social
+      SELECT u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, pi.grupo_sanguineo, pi.obra_social
       FROM usuario u
       LEFT JOIN paciente_info pi ON u.id = pi.usuario_id
       WHERE u.dni = ? AND u.tipo = 'paciente'
@@ -225,25 +215,29 @@ const buscarPacientePorDNI = (req, res) => {
 // Crear médico (admin)
 const cargarMedico = (req, res) => {
   const idAdmin = req.user.id
-  const { nombre, dni, sexo, fecha_nac, telefono, email, password, matricula, consultorio, especialidad_id } = req.body
+  const { nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, matricula, consultorio, especialidad_id } = req.body
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
     if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
-    db.run(`
-      INSERT INTO usuario (nombre, dni, sexo, fecha_nac, telefono, tipo, email, password)
-      VALUES (?, ?, ?, ?, ?, 'medico', ?, ?)
-    `, [nombre, dni, sexo, fecha_nac, telefono, email, password], function (err) {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al registrar médico'))
-      const medicoId = this.lastID
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
 
       db.run(`
-        INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
-        VALUES (?, ?, ?, ?)
-      `, [medicoId, matricula, consultorio, especialidad_id], function (err) {
-        if (err) return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'))
-        res.status(201).json(ResponseMessage.from({ message: 'Médico creado correctamente', id: medicoId }, 201))
+        INSERT INTO usuario (nombre, apellido, dni, sexo, fecha_nac, telefono, tipo, email, password)
+        VALUES (?, ?, ?, ?, ?, ?, 'medico', ?, ?)
+      `, [nombre, apellido, dni, sexo, fecha_nac, telefono, email, hashedPassword], function (err) {
+        if (err) return res.status(500).json(ErrorMessage.from('Error al registrar médico'))
+        const medicoId = this.lastID
+
+        db.run(`
+          INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
+          VALUES (?, ?, ?, ?)
+        `, [medicoId, matricula, consultorio, especialidad_id], function (err) {
+          if (err) return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'))
+          res.status(201).json(ResponseMessage.from({ message: 'Médico creado correctamente', id: medicoId }, 201))
+        })
       })
     })
   })
@@ -320,7 +314,8 @@ const verHistoriaClinica = (req, res) => {
         hc.fecha, 
         hc.nota, 
         hc.medicacion, 
-        u.nombre AS medico,
+        u.nombre AS medico_nombre,
+        u.apellido AS medico_apellido,
         mi.consultorio,
         e.nombre AS especialidad
       FROM historia_clinica hc
