@@ -3,6 +3,7 @@ const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
 const bcrypt = require('bcrypt')
+const GeneralValidator = require('../validators/GeneralValidator');
 
 // Obtener perfil del usuario (médico)
 const obtenerPerfil = (req, res) => {
@@ -134,7 +135,7 @@ const allPacientes = (req, res) => {
       params.push(`%${dni}%`);
     }
 
-    query += ' ORDER BY u.nombre';
+    query += ' ORDER BY u.apellido, u.nombre';
 
     if (limit && !isNaN(parseInt(limit))) {
       query += ' LIMIT ?';
@@ -213,35 +214,77 @@ const buscarPacientePorDNI = (req, res) => {
 }
 
 // Crear médico (admin)
-const cargarMedico = (req, res) => {
-  const idAdmin = req.user.id
-  const { nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, matricula, consultorio, especialidad_id } = req.body
+const cargarMedico = async (req, res) => {
+  const idAdmin = req.user.id;
+  const {
+    nombre,
+    apellido,
+    dni,
+    sexo,
+    fecha_nac,
+    telefono,
+    email,
+    password,
+    matricula,
+    consultorio,
+    especialidad_id
+  } = req.body;
 
-  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
-    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+  // Validar si el usuario actual es médico
+  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], async (err, row) => {
+    if (err || !row) {
+      return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
+    }
 
+    if (row.tipo !== 'medico') {
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
+    }
+
+    // Validaciones de DNI, email y matrícula
+    try {
+      const { valid, errors } = await GeneralValidator.validateAll({ dni, email, matricula });
+
+      if (!valid) {
+        return res.status(400).json(CustomStatusMessage.from(null, 400, errors.join(', ')));
+      }
+    } catch (validationError) {
+      return res.status(500).json(ErrorMessage.from(validationError));
+    }
+
+    // Si todo está bien, continuar con el registro
     bcrypt.hash(password, 10, (err, hashedPassword) => {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
+      if (err) {
+        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
+      }
 
       db.run(`
         INSERT INTO usuario (nombre, apellido, dni, sexo, fecha_nac, telefono, tipo, email, password)
         VALUES (?, ?, ?, ?, ?, ?, 'medico', ?, ?)
       `, [nombre, apellido, dni, sexo, fecha_nac, telefono, email, hashedPassword], function (err) {
-        if (err) return res.status(500).json(ErrorMessage.from('Error al registrar médico'))
-        const medicoId = this.lastID
+        if (err) {
+          return res.status(500).json(ErrorMessage.from('Error al registrar médico'));
+        }
+
+        const medicoId = this.lastID;
 
         db.run(`
           INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
           VALUES (?, ?, ?, ?)
         `, [medicoId, matricula, consultorio, especialidad_id], function (err) {
-          if (err) return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'))
-          res.status(201).json(ResponseMessage.from({ message: 'Médico creado correctamente', id: medicoId }, 201))
-        })
-      })
-    })
-  })
+          if (err) {
+            return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'));
+          }
+
+          res.status(201).json(ResponseMessage.from({
+            message: 'Médico creado correctamente',
+            id: medicoId
+          }, 201));
+        });
+      });
+    });
+  });
 }
+
 
 // Eliminar paciente (admin)
 const eliminarPaciente = (req, res) => {

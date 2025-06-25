@@ -29,8 +29,8 @@ const obtenerPerfilPaciente = (req, res) => {
 }
 
 // Actualizar perfil del paciente (solo el mismo paciente)
-const actualizarPerfilPaciente = (req, res) => {
-  const idUsuario = req.user.id
+const actualizarPerfilPaciente = async (req, res) => {
+  const idUsuario = req.user.id;
   const {
     nombre,
     apellido,
@@ -41,23 +41,47 @@ const actualizarPerfilPaciente = (req, res) => {
     password,
     grupo_sanguineo,
     obra_social
-  } = req.body
+  } = req.body;
+  try {
+    // Obtener el DNI actual del paciente desde la base de datos
+    const row = await new Promise((resolve, reject) => {
+      db.get(`SELECT dni FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idUsuario], (err, row) => {
+        if (err) return reject('Error al verificar DNI original');
+        if (!row) return reject('Paciente no encontrado');
+        resolve(row);
+      });
+    });
+
+    if (dni && dni !== row.dni) {
+      return res.status(400).json(ErrorMessage.from('No se permite cambiar el DNI'));
+    }
+
+    // Verificar que el nuevo email no esté siendo usado por otro
+    const emailDisponible = await GeneralValidator.isEmailAvailableForUpdate(email, idUsuario);
+    if (!emailDisponible) {
+      return res.status(400).json(CustomStatusMessage.from(null, 400, 'El correo ya está en uso por otro usuario'));
+    }
+
+  } catch (err) {
+    return res.status(500).json(ErrorMessage.from(err));
+  }
 
   const actualizarUsuario = (hash = null) => {
     const queryUsuario = hash
       ? `UPDATE usuario SET nombre = ?, apellido = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ? AND tipo = 'paciente'`
-      : `UPDATE usuario SET nombre = ?, apellido = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ? AND tipo = 'paciente'`
+      : `UPDATE usuario SET nombre = ?, apellido = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ? AND tipo = 'paciente'`;
 
     const paramsUsuario = hash
       ? [nombre, apellido, sexo, fecha_nac, telefono, email, hash, idUsuario]
-      : [nombre, apellido, sexo, fecha_nac, telefono, email, idUsuario]
+      : [nombre, apellido, sexo, fecha_nac, telefono, email, idUsuario];
 
     db.run(queryUsuario, paramsUsuario, function (err) {
       if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del paciente'))
+        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del paciente'));
       }
+
       if (this.changes === 0) {
-        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios'))
+        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios'));
       }
 
       db.run(
@@ -65,23 +89,24 @@ const actualizarPerfilPaciente = (req, res) => {
         [grupo_sanguineo, obra_social, idUsuario],
         function (err2) {
           if (err2) {
-            return res.status(500).json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'))
+            return res.status(500).json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'));
           }
-          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }))
-        }
-      )
-    })
-  }
 
-  if (password && password.trim() !== '') {
+          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }));
+        }
+      );
+    });
+  };
+
+  if (password) {
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
+        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
       }
-      actualizarUsuario(hash)
-    })
+      actualizarUsuario(hash);
+    });
   } else {
-    actualizarUsuario()
+    actualizarUsuario();
   }
 }
 
