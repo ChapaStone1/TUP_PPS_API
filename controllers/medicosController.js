@@ -3,7 +3,7 @@ const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
 const bcrypt = require('bcrypt')
-const GeneralValidator = require('../validators/GeneralValidator');
+const GeneralValidator = require('../Validator/GeneralValidator');
 
 // Obtener perfil del usuario (médico)
 const obtenerPerfil = (req, res) => {
