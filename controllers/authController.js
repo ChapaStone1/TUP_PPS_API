@@ -6,9 +6,10 @@ const SECRET_KEY = process.env.SECRET_KEY
 const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
+const GeneralValidator = require('../validators/GeneralValidator');
 
 // Registrar solo pacientes
-const register = (req, res) => {
+const register = async (req, res) => {
   const {
     nombre,
     apellido,
@@ -20,7 +21,7 @@ const register = (req, res) => {
     password,
     grupo_sanguineo,
     obra_social
-  } = req.body
+  } = req.body;
 
   // Validar campos obligatorios
   if (
@@ -29,13 +30,50 @@ const register = (req, res) => {
   ) {
     return res.status(400).json(
       CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
-    )
+    );
   }
 
-  const tipo = 'paciente'
+  // Validar disponibilidad de dni y email usando GeneralValidator.validateRegister
+  try {
+    const dniDisponible = await GeneralValidator.isDniAvailable(dni);
+    if (!dniDisponible) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'El DNI ya está registrado')
+      );
+    }
+
+    const emailDisponible = await GeneralValidator.isEmailAvailable(email);
+    if (!emailDisponible) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'El correo ya está registrado')
+      );
+    }
+  } catch (error) {
+    return res.status(500).json(ErrorMessage.from('Error en la validación de datos'));
+  }
+
+  if (!GeneralValidator.validateGrupoSanguineo(grupo_sanguineo)) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'Grupo sanguíneo inválido')
+    );
+  }
+
+  if (!GeneralValidator.validarEmailFormato(email)) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
+    );
+  }
+
+  if (!GeneralValidator.validarPasswordSegura(password)) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'La contraseña debe tener al menos 6 caracteres')
+    );
+  }
+
+  const tipo = 'paciente';
 
   bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'))
+    if (err) return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
 
     db.run(
       `
@@ -47,10 +85,10 @@ const register = (req, res) => {
         if (err) {
           return res.status(400).json(
             CustomStatusMessage.from(null, 400, 'Email o DNI ya existe o datos inválidos')
-          )
+          );
         }
 
-        const pacienteId = this.lastID
+        const pacienteId = this.lastID;
 
         db.run(
           `
@@ -60,7 +98,7 @@ const register = (req, res) => {
           [pacienteId, grupo_sanguineo, obra_social],
           (err) => {
             if (err) {
-              return res.status(500).json(ErrorMessage.from('Error al guardar información del paciente'))
+              return res.status(500).json(ErrorMessage.from('Error al guardar información del paciente'));
             }
 
             res.status(201).json(
@@ -68,13 +106,14 @@ const register = (req, res) => {
                 message: 'Paciente registrado exitosamente',
                 usuarioId: pacienteId
               }, 201)
-            )
+            );
           }
-        )
+        );
       }
-    )
-  })
-}
+    );
+  });
+};
+
 
 // Login
 const login = (req, res) => {
@@ -82,6 +121,12 @@ const login = (req, res) => {
 
   if (!email || !password) {
     return res.status(400).json(CustomStatusMessage.from(null, 400, 'Email y contraseña son obligatorios'))
+  }
+
+  if (!GeneralValidator.validarEmailFormato(email)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
+      );
   }
 
   db.get(`SELECT * FROM usuario WHERE email = ?`, [email], (err, usuario) => {

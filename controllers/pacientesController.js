@@ -2,6 +2,7 @@ const db = require('../db/db')
 const ResponseMessage = require('../models/ResponseMessage')
 const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
+const GeneralValidator = require('../validators/GeneralValidator');
 const bcrypt = require('bcrypt')
 
 // Obtener perfil del paciente (solo si es paciente)
@@ -40,10 +41,21 @@ const actualizarPerfilPaciente = async (req, res) => {
     email,
     password,
     grupo_sanguineo,
-    obra_social
+    obra_social,
+    dni // llega solo para validación, no se actualiza
   } = req.body;
+
   try {
-    // Obtener el DNI actual del paciente desde la base de datos
+    if (
+      !nombre || !apellido || !dni || !sexo || !fecha_nac ||
+      !email || !telefono || !password || !grupo_sanguineo || !obra_social
+    ) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
+      );
+    }
+
+    // Verificar que el DNI no haya cambiado
     const row = await new Promise((resolve, reject) => {
       db.get(`SELECT dni FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idUsuario], (err, row) => {
         if (err) return reject('Error al verificar DNI original');
@@ -53,17 +65,39 @@ const actualizarPerfilPaciente = async (req, res) => {
     });
 
     if (dni && dni !== row.dni) {
-      return res.status(400).json(ErrorMessage.from('No se permite cambiar el DNI'));
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'No se permite cambiar el DNI')
+      );
     }
 
-    // Verificar que el nuevo email no esté siendo usado por otro
+    // Validar que el email no esté en uso por otro usuario
     const emailDisponible = await GeneralValidator.isEmailAvailableForUpdate(email, idUsuario);
     if (!emailDisponible) {
-      return res.status(400).json(CustomStatusMessage.from(null, 400, 'El correo ya está en uso por otro usuario'));
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'El correo ya está registrado')
+      );
     }
 
-  } catch (err) {
-    return res.status(500).json(ErrorMessage.from(err));
+    // Validar grupo sanguíneo
+    if (!GeneralValidator.validateGrupoSanguineo(grupo_sanguineo)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Grupo sanguíneo inválido')
+      );
+    }
+  } catch (error) {
+    return res.status(500).json(ErrorMessage.from('Error en la validación de datos'));
+  }
+
+  if (!GeneralValidator.validarEmailFormato(email)) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
+    );
+  }
+
+  if (!GeneralValidator.validarPasswordSegura(password)) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'La contraseña debe tener al menos 6 caracteres')
+    );
   }
 
   const actualizarUsuario = (hash = null) => {
@@ -77,11 +111,15 @@ const actualizarPerfilPaciente = async (req, res) => {
 
     db.run(queryUsuario, paramsUsuario, function (err) {
       if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del paciente'));
+        return res
+          .status(500)
+          .json(ErrorMessage.from('Error al actualizar datos del paciente'));
       }
 
       if (this.changes === 0) {
-        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios'));
+        return res
+          .status(404)
+          .json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado o sin cambios'));
       }
 
       db.run(
@@ -89,10 +127,14 @@ const actualizarPerfilPaciente = async (req, res) => {
         [grupo_sanguineo, obra_social, idUsuario],
         function (err2) {
           if (err2) {
-            return res.status(500).json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'));
+            return res
+              .status(500)
+              .json(ErrorMessage.from('Error al actualizar datos adicionales del paciente'));
           }
 
-          res.status(200).json(ResponseMessage.from({ message: 'Perfil actualizado correctamente' }));
+          res.status(200).json(
+            ResponseMessage.from({ message: 'Perfil actualizado correctamente' })
+          );
         }
       );
     });
@@ -108,7 +150,9 @@ const actualizarPerfilPaciente = async (req, res) => {
   } else {
     actualizarUsuario();
   }
-}
+};
+
+
 
 // Ver historia clínica del propio paciente
 const verMiHistoriaClinica = (req, res) => {

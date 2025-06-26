@@ -11,6 +11,19 @@ class GeneralValidator {
     });
   }
 
+  static async isDniAvailableForUpdate(dni, excludeId) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT id FROM usuario WHERE dni = ? AND id != ?`,
+        [dni, excludeId],
+        (err, row) => {
+          if (err) return reject('Error al verificar DNI');
+          resolve(!row); // Disponible si no hay otro usuario con ese dni
+        }
+      );
+    });
+  }
+
   static async isEmailAvailable(email) {
     return new Promise((resolve, reject) => {
       db.get(`SELECT id FROM usuario WHERE email = ?`, [email], (err, row) => {
@@ -19,12 +32,17 @@ class GeneralValidator {
       });
     });
   }
+
   static async isEmailAvailableForUpdate(email, excludeId) {
     return new Promise((resolve, reject) => {
-        db.get(`SELECT id FROM usuario WHERE email = ? AND id != ?`, [email, excludeId], (err, row) => {
-        if (err) return reject('Error al verificar email');
-        resolve(!row); // Está disponible si no hay otro usuario con ese email
-        });
+      db.get(
+        `SELECT id FROM usuario WHERE email = ? AND id != ?`,
+        [email, excludeId],
+        (err, row) => {
+          if (err) return reject('Error al verificar email');
+          resolve(!row); // Está disponible si no hay otro usuario con ese email
+        }
+      );
     });
   }
 
@@ -41,7 +59,33 @@ class GeneralValidator {
     });
   }
 
-  static async validateAll({ dni, email, matricula }) {
+  static async isMatriculaAvailableForUpdate(matricula, excludeId) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT id FROM medico_info WHERE matricula = ? AND usuario_id != ?`,
+        [matricula, excludeId],
+        (err, row) => {
+          if (err) return reject('Error al verificar matrícula');
+          resolve(!row);
+        }
+      );
+    });
+  }
+  static async validateGrupoSanguineo(grupo) {
+    const tiposValidos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    return tiposValidos.includes(grupo);
+  }
+
+  static validarEmailFormato(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+static validarPasswordSegura(password) {
+  return typeof password === 'string' && password.length >= 6;
+}
+
+  static async validateRegister({ dni, email, matricula }) {
     const [dniOk, emailOk, matriculaOk] = await Promise.all([
       this.isDniAvailable(dni),
       this.isEmailAvailable(email),
@@ -58,6 +102,25 @@ class GeneralValidator {
       errors,
     };
   }
+
+  static async validateUpdate({ dni, email, matricula, userId }) {
+    const [dniOk, emailOk, matriculaOk] = await Promise.all([
+      this.isDniAvailableForUpdate(dni, userId),
+      this.isEmailAvailableForUpdate(email, userId),
+      this.isMatriculaAvailableForUpdate(matricula, userId),
+    ]);
+
+    const errors = [];
+    if (!dniOk) errors.push('El DNI ya está registrado por otro usuario');
+    if (!emailOk) errors.push('El correo ya está registrado por otro usuario');
+    if (!matriculaOk) errors.push('La matrícula ya está registrada por otro usuario');
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }
 }
 
 module.exports = GeneralValidator;
+

@@ -27,8 +27,8 @@ const obtenerPerfil = (req, res) => {
   })
 }
 
-const actualizarPerfil = (req, res) => {
-  const idUsuario = req.user.id;
+const actualizarPerfil = async (req, res) => {
+  const { idUsuario } = req.params; // o como lo tengas
   const {
     nombre,
     apellido,
@@ -40,61 +40,91 @@ const actualizarPerfil = (req, res) => {
     password,
     matricula,
     consultorio,
-    especialidad_id
+    especialidad_id,
   } = req.body;
 
-  const telefonoInt = parseInt(telefono);
-  if (isNaN(telefonoInt)) {
-    return res.status(400).json(ErrorMessage.from('El campo "telefono" debe ser un número válido'));
-  }
+  // Primero validar disponibilidad de dni, email y matrícula excluyendo al usuario actual:
+  try {
+    const validation = await GeneralValidator.validateUpdate({ dni, email, matricula });
 
-  const actualizarUsuario = (hash = null) => {
-    const queryUsuario = hash
-      ? `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
-      : `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ?`;
-
-    const paramsUsuario = hash
-      ? [nombre, apellido, dni, sexo, fecha_nac, telefonoInt, email, hash, idUsuario]
-      : [nombre, apellido, dni, sexo, fecha_nac, telefonoInt, email, idUsuario];
-
-    db.run(queryUsuario, paramsUsuario, function (err) {
-      if (err) {
-        console.error('Error al actualizar usuario:', err);
-        return res.status(500).json(ErrorMessage.from('Error al actualizar datos del usuario'));
-      }
-
-      if (this.changes === 0) {
-        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Usuario no encontrado'));
-      }
-
-      db.run(
-        `UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
-        [matricula, consultorio, especialidad_id, idUsuario],
-        function (err) {
-          if (err) {
-            console.error('Error al actualizar médico:', err);
-            return res.status(500).json(ErrorMessage.from('Error al actualizar datos del médico'));
-          }
-
-          res
-            .status(200)
-            .json(ResponseMessage.from({ message: 'Perfil del médico actualizado correctamente' }));
-        }
+    // Si hay errores, responder con ellos
+    if (!validation.valid) {
+      return res.status(400).json({
+        ok: false,
+        errors: validation.errors,
+      });
+    }
+    if (
+      !nombre || !apellido || !dni || !sexo || !fecha_nac ||
+      !email || !telefono || !password || !matricula || !consultorio || !especialidad_id
+    ) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
       );
-    });
-  };
+    }
 
-  if (password && password.trim() !== '') {
-    bcrypt.hash(password, 10, (err, hash) => {
-      if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
-      }
-      actualizarUsuario(hash);
-    });
-  } else {
-    actualizarUsuario();
+    if (!GeneralValidator.validarEmailFormato(email)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
+      );
+    }
+
+    if (!GeneralValidator.validarPasswordSegura(password)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'La contraseña debe tener al menos 6 caracteres')
+      );
+    }
+
+    // Ya validado, continuar con la actualización
+    const actualizarUsuario = (hash = null) => {
+      const queryUsuario = hash
+        ? `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
+        : `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ? WHERE id = ?`;
+
+      const paramsUsuario = hash
+        ? [nombre, apellido, dni, sexo, fecha_nac, telefono, email, hash, idUsuario]
+        : [nombre, apellido, dni, sexo, fecha_nac, telefono, email, idUsuario];
+
+      db.run(queryUsuario, paramsUsuario, function (err) {
+        if (err) {
+          console.error('Error al actualizar usuario:', err);
+          return res.status(500).json({ message: 'Error al actualizar datos del usuario' });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        db.run(
+          `UPDATE medico_info SET matricula = ?, consultorio = ?, especialidad_id = ? WHERE usuario_id = ?`,
+          [matricula, consultorio, especialidad_id, idUsuario],
+          function (err) {
+            if (err) {
+              console.error('Error al actualizar médico:', err);
+              return res.status(500).json({ message: 'Error al actualizar datos del médico' });
+            }
+
+            res.status(200).json({ message: 'Perfil del médico actualizado correctamente' });
+          }
+        );
+      });
+    };
+
+    if (password && password.trim() !== '') {
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error al encriptar contraseña' });
+        }
+        actualizarUsuario(hash);
+      });
+    } else {
+      actualizarUsuario();
+    }
+  } catch (error) {
+    console.error('Error en validación:', error);
+    return res.status(500).json({ message: 'Error interno en validación' });
   }
-}
+};
 
 // Obtener todas las especialidades
 const obtenerEspecialidades = (req, res) => {
@@ -230,6 +260,15 @@ const cargarMedico = async (req, res) => {
     especialidad_id
   } = req.body;
 
+  if (
+    !nombre || !apellido || !dni || !sexo || !fecha_nac ||
+    !email || !telefono || !password || !matricula || !consultorio || !especialidad_id
+  ) {
+    return res.status(400).json(
+      CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
+    );
+  }
+
   // Validar si el usuario actual es médico
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], async (err, row) => {
     if (err || !row) {
@@ -242,13 +281,25 @@ const cargarMedico = async (req, res) => {
 
     // Validaciones de DNI, email y matrícula
     try {
-      const { valid, errors } = await GeneralValidator.validateAll({ dni, email, matricula });
+      const { valid, errors } = await GeneralValidator.validateRegister({ dni, email, matricula });
 
       if (!valid) {
         return res.status(400).json(CustomStatusMessage.from(null, 400, errors.join(', ')));
       }
     } catch (validationError) {
       return res.status(500).json(ErrorMessage.from(validationError));
+    }
+
+    if (!GeneralValidator.validarEmailFormato(email)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
+      );
+    }
+
+    if (!GeneralValidator.validarPasswordSegura(password)) {
+      return res.status(400).json(
+        CustomStatusMessage.from(null, 400, 'La contraseña debe tener al menos 6 caracteres')
+      );
     }
 
     // Si todo está bien, continuar con el registro
