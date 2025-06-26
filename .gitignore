@@ -1,8 +1,6 @@
+scripts/datosIniciales.js
 .env
 node_modules
-./scripts/datosIniciales.js
-scripts
-datosIniciales.js
 key.env
 ./sample.env
 JWT_SECRET.env
