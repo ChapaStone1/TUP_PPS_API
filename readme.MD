@@ -45,11 +45,63 @@ Sigue estos pasos para configurar el proyecto localmente:
    La API estará disponible en `http://localhost:3000` (o el puerto configurado en `.env`).
 
 
+## 🔐 Autenticación
 
+### 📝 Registrar paciente
 
+- **Método:** `POST`  
+- **Ruta:** `/api/auth/register`
+
+#### 📥 Request Body:
+```json
+{
+  "nombre": "Ana",
+  "apellido": "Gómez",
+  "dni": "12345678",
+  "sexo": "femenino",
+  "fecha_nac": "1990-05-12",
+  "email": "ana@example.com",
+  "telefono": "1122334455",
+  "password": "claveSegura123",
+  "grupo_sanguineo": "O+",
+  "obra_social": "OSDE"
+}
+```
+
+#### 📤 Respuesta:
+```json
+{
+  "message": "Paciente registrado exitosamente",
+  "usuarioId": 6
+}
+```
 
 ---
 
+### 🔓 Login
+
+- **Método:** `POST`  
+- **Ruta:** `/api/auth/login`
+
+#### 📥 Request Body:
+```json
+{
+  "email": "ana@example.com",
+  "password": "claveSegura123"
+}
+```
+
+#### 📤 Respuesta:
+```json
+{
+  "message": "Login exitoso",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tipo": "paciente"
+}
+```
+
+
+---
 
 
 ## 📌 Endpoints para Pacientes
