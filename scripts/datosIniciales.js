@@ -41,7 +41,7 @@ const medicos = [
     email: 'chapapr@gmail.com',
     password: 'admin123',
     tipo: 'medico',
-    matricula: 'MAT12345',
+    matricula: 'MAT223311',
     consultorio: 'Consultorio 1',
     especialidadIndex: 0
   },
@@ -70,6 +70,19 @@ const medicos = [
     matricula: 'MAT54321',
     consultorio: 'Consultorio 2',
     especialidadIndex: 1
+  },
+  {
+    nombre: 'Franco', apellido: 'Colapinto',
+    dni: '42009322',
+    sexo: 'M',
+    fecha_nac: '2004-09-21',
+    telefono: '1123456730',
+    email: 'medico@example.com',
+    password: 'admin123',
+    tipo: 'medico',
+    matricula: 'MAT32322',
+    consultorio: 'Consultorio 3',
+    especialidadIndex: 3
   }
 ]
 
@@ -99,7 +112,7 @@ async function cargarDatos() {
       sexo: 'F',
       fecha_nac: '1995-04-10',
       telefono: '1130009991',
-      email: 'ejemplopaciente@mail.com',
+      email: 'paciente@example.com',
       password: 'admin123',
       tipo: 'paciente',
       grupo_sanguineo: 'A+',
