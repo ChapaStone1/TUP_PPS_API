@@ -58,7 +58,10 @@ class GeneralValidator {
         `SELECT id FROM medico_info WHERE matricula = ?`,
         [matricula],
         (err, row) => {
-          if (err) return reject('Error al verificar matrícula');
+          if (err) {
+  console.error('Error SQL en isMatriculaAvailable:', err); // <--- esto te mostrará el error real
+  return reject('Error al verificar matrícula');
+}
           resolve(!row);
         }
       );
