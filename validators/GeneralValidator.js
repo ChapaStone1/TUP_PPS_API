@@ -112,11 +112,10 @@ static validarPasswordSegura(password) {
     };
   }
 
-  static async validateUpdate({ dni, email, matricula, idUsuario }) {
+  static async validateUpdate({ dni, email, idUsuario }) {
     const [dniOk, emailOk, matriculaOk] = await Promise.all([
       this.isDniAvailableForUpdate(dni, idUsuario),
       this.isEmailAvailableForUpdate(email, idUsuario),
-      this.isMatriculaAvailableForUpdate(matricula, idUsuario),
     ]);
 
     const errors = [];
