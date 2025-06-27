@@ -28,7 +28,7 @@ const obtenerPerfil = (req, res) => {
 }
 
 const actualizarPerfil = async (req, res) => {
-  const { idUsuario } = req.params; // o como lo tengas
+  const idUsuario = req.user.id // o como lo tengas
   const {
     nombre,
     apellido,
