@@ -55,13 +55,13 @@ class GeneralValidator {
   static async isMatriculaAvailable(matricula) {
     return new Promise((resolve, reject) => {
       db.get(
-        `SELECT id FROM medico_info WHERE matricula = ?`,
+        `SELECT usuario_id FROM medico_info WHERE matricula = ?`,
         [matricula],
         (err, row) => {
           if (err) {
-  console.error('Error SQL en isMatriculaAvailable:', err); // <--- esto te mostrará el error real
-  return reject('Error al verificar matrícula');
-}
+            console.error('Error SQL en isMatriculaAvailable:', err); // <--- esto te mostrará el error real
+            return reject('Error al verificar matrícula');
+          }
           resolve(!row);
         }
       );
