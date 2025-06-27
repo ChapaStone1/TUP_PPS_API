@@ -14,4 +14,6 @@ router.put('/mi-perfil', controller.actualizarPerfilPaciente)
 // GET /mi-historia -> Ver historia clínica del paciente logueado
 router.get('/historia-clinica', controller.verMiHistoriaClinica)
 
+router.get('/ver-medicos', controller.listarMedicos)
+
 module.exports = router

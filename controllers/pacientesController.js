@@ -192,8 +192,46 @@ const verMiHistoriaClinica = (req, res) => {
   })
 }
 
+// Obtener todos los médicos con su información profesional
+const listarMedicos = (req, res) => {
+
+  const query = `
+    SELECT 
+      u.id,
+      u.nombre,
+      u.apellido,
+      u.dni,
+      u.sexo,
+      u.fecha_nac,
+      u.telefono,
+      u.email,
+      mi.matricula,
+      mi.consultorio,
+      e.id AS especialidad_id,
+      e.nombre AS especialidad_nombre
+    FROM usuario u
+    LEFT JOIN medico_info mi ON u.id = mi.usuario_id
+    LEFT JOIN especialidad e ON mi.especialidad_id = e.id
+    WHERE u.tipo = 'medico'
+    ORDER BY u.apellido, u.nombre
+  `;
+
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json(ErrorMessage.from('Error al obtener la lista de médicos'));
+    }
+
+    res.status(200).json(ResponseMessage.from(rows));
+  });
+};
+
+
+
+
+
 module.exports = {
   obtenerPerfilPaciente,
   actualizarPerfilPaciente,
-  verMiHistoriaClinica
+  verMiHistoriaClinica,
+  listarMedicos
 }
