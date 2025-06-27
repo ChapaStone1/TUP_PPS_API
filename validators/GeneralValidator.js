@@ -11,14 +11,14 @@ class GeneralValidator {
     });
   }
 
-  static async isDniAvailableForUpdate(dni, excludeId) {
-    if (!userId) {
+  static async isDniAvailableForUpdate(dni, idUsuario) {
+    if (!idUsuario) {
       throw new Error('Falta el ID del usuario para validar la actualización');
     }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM usuario WHERE dni = ? AND id != ?`,
-        [dni, excludeId],
+        [dni, idUsuario],
         (err, row) => {
           if (err) return reject('Error al verificar DNI');
           resolve(!row); // Disponible si no hay otro usuario con ese dni
@@ -36,14 +36,14 @@ class GeneralValidator {
     });
   }
 
-  static async isEmailAvailableForUpdate(email, excludeId) {
-    if (!userId) {
+  static async isEmailAvailableForUpdate(email, idUsuario) {
+    if (!idUsuario) {
       throw new Error('Falta el ID del usuario para validar la actualización');
     }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM usuario WHERE email = ? AND id != ?`,
-        [email, excludeId],
+        [email, idUsuario],
         (err, row) => {
           if (err) return reject('Error al verificar email');
           resolve(!row); // Está disponible si no hay otro usuario con ese email
@@ -65,14 +65,14 @@ class GeneralValidator {
     });
   }
 
-  static async isMatriculaAvailableForUpdate(matricula, excludeId) {
-    if (!userId) {
+  static async isMatriculaAvailableForUpdate(matricula, idUsuario) {
+    if (!idUsuario) {
       throw new Error('Falta el ID del usuario para validar la actualización');
     }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM medico_info WHERE matricula = ? AND usuario_id != ?`,
-        [matricula, excludeId],
+        [matricula, idUsuario],
         (err, row) => {
           if (err) return reject('Error al verificar matrícula');
           resolve(!row);
@@ -112,11 +112,11 @@ static validarPasswordSegura(password) {
     };
   }
 
-  static async validateUpdate({ dni, email, matricula, userId }) {
+  static async validateUpdate({ dni, email, matricula, idUsuario }) {
     const [dniOk, emailOk, matriculaOk] = await Promise.all([
-      this.isDniAvailableForUpdate(dni, userId),
-      this.isEmailAvailableForUpdate(email, userId),
-      this.isMatriculaAvailableForUpdate(matricula, userId),
+      this.isDniAvailableForUpdate(dni, idUsuario),
+      this.isEmailAvailableForUpdate(email, idUsuario),
+      this.isMatriculaAvailableForUpdate(matricula, idUsuario),
     ]);
 
     const errors = [];
