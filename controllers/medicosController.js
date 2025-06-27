@@ -45,7 +45,7 @@ const actualizarPerfil = async (req, res) => {
 
   // Primero validar disponibilidad de dni, email y matrícula excluyendo al usuario actual:
   try {
-    const validation = await GeneralValidator.validateUpdate({ dni, email, matricula, idUsuario });
+    const validation = await GeneralValidator.validateUpdate({ dni, email, idUsuario });
 
     // Si hay errores, responder con ellos
     if (!validation.valid) {
