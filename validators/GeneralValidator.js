@@ -97,17 +97,15 @@ static validarPasswordSegura(password) {
   return typeof password === 'string' && password.length >= 6;
 }
 
-  static async validateRegister({ dni, email, matricula }) {
-    const [dniOk, emailOk, matriculaOk] = await Promise.all([
+  static async validateRegister({ dni, email}) {
+    const [dniOk, emailOk] = await Promise.all([
       this.isDniAvailable(dni),
       this.isEmailAvailable(email),
-      this.isMatriculaAvailable(matricula),
     ]);
 
     const errors = [];
     if (!dniOk) errors.push('El DNI ya está registrado');
     if (!emailOk) errors.push('El correo ya está registrado');
-    if (!matriculaOk) errors.push('La matrícula ya está registrada');
 
     return {
       valid: errors.length === 0,

@@ -281,7 +281,7 @@ const cargarMedico = async (req, res) => {
 
     // Validaciones de DNI, email y matrícula
     try {
-      const { valid, errors } = await GeneralValidator.validateRegister({ dni, email, matricula });
+      const { valid, errors } = await GeneralValidator.validateRegister({ dni, email });
 
       if (!valid) {
         return res.status(400).json(CustomStatusMessage.from(null, 400, errors.join(', ')));
