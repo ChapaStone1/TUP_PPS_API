@@ -12,6 +12,9 @@ class GeneralValidator {
   }
 
   static async isDniAvailableForUpdate(dni, excludeId) {
+    if (!userId) {
+      throw new Error('Falta el ID del usuario para validar la actualización');
+    }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM usuario WHERE dni = ? AND id != ?`,
@@ -34,6 +37,9 @@ class GeneralValidator {
   }
 
   static async isEmailAvailableForUpdate(email, excludeId) {
+    if (!userId) {
+      throw new Error('Falta el ID del usuario para validar la actualización');
+    }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM usuario WHERE email = ? AND id != ?`,
@@ -60,6 +66,9 @@ class GeneralValidator {
   }
 
   static async isMatriculaAvailableForUpdate(matricula, excludeId) {
+    if (!userId) {
+      throw new Error('Falta el ID del usuario para validar la actualización');
+    }
     return new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM medico_info WHERE matricula = ? AND usuario_id != ?`,
