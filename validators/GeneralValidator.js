@@ -113,7 +113,7 @@ static validarPasswordSegura(password) {
   }
 
   static async validateUpdate({ dni, email, idUsuario }) {
-    const [dniOk, emailOk, idUsuario] = await Promise.all([
+    const [dniOk, emailOk] = await Promise.all([
       this.isDniAvailableForUpdate(dni, idUsuario),
       this.isEmailAvailableForUpdate(email, idUsuario),
     ]);
@@ -121,7 +121,6 @@ static validarPasswordSegura(password) {
     const errors = [];
     if (!dniOk) errors.push('El DNI ya está registrado por otro usuario');
     if (!emailOk) errors.push('El correo ya está registrado por otro usuario');
-    if (!matriculaOk) errors.push('La matrícula ya está registrada por otro usuario');
 
     return {
       valid: errors.length === 0,
