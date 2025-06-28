@@ -243,119 +243,6 @@ const buscarPacientePorDNI = (req, res) => {
   })
 }
 
-// Crear médico (admin)
-const cargarMedico = async (req, res) => {
-  const idAdmin = req.user.id;
-  const {
-    nombre,
-    apellido,
-    dni,
-    sexo,
-    fecha_nac,
-    telefono,
-    email,
-    password,
-    matricula,
-    consultorio,
-    especialidad_id
-  } = req.body;
-
-  if (
-    !nombre || !apellido || !dni || !sexo || !fecha_nac ||
-    !email || !telefono || !password || !matricula || !consultorio || !especialidad_id
-  ) {
-    return res.status(400).json(
-      CustomStatusMessage.from(null, 400, 'Faltan campos obligatorios')
-    );
-  }
-
-  // Validar si el usuario actual es médico
-  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], async (err, row) => {
-    if (err || !row) {
-      return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
-    }
-
-    if (row.tipo !== 'medico') {
-      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
-    }
-
-    // Validaciones de DNI, email y matrícula
-    try {
-      const { valid, errors } = await GeneralValidator.validateRegister({ dni, email });
-
-      if (!valid) {
-        return res.status(400).json(CustomStatusMessage.from(null, 400, errors.join(', ')));
-      }
-    } catch (validationError) {
-      return res.status(500).json(ErrorMessage.from(validationError));
-    }
-
-    if (!GeneralValidator.validarEmailFormato(email)) {
-      return res.status(400).json(
-        CustomStatusMessage.from(null, 400, 'Formato de correo inválido')
-      );
-    }
-
-    if (!GeneralValidator.validarPasswordSegura(password)) {
-      return res.status(400).json(
-        CustomStatusMessage.from(null, 400, 'La contraseña debe tener al menos 6 caracteres')
-      );
-    }
-
-    // Si todo está bien, continuar con el registro
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-      if (err) {
-        return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
-      }
-
-      db.run(`
-        INSERT INTO usuario (nombre, apellido, dni, sexo, fecha_nac, telefono, tipo, email, password)
-        VALUES (?, ?, ?, ?, ?, ?, 'medico', ?, ?)
-      `, [nombre, apellido, dni, sexo, fecha_nac, telefono, email, hashedPassword], function (err) {
-        if (err) {
-          return res.status(500).json(ErrorMessage.from('Error al registrar médico'));
-        }
-
-        const medicoId = this.lastID;
-
-        db.run(`
-          INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
-          VALUES (?, ?, ?, ?)
-        `, [medicoId, matricula, consultorio, especialidad_id], function (err) {
-          if (err) {
-            return res.status(500).json(ErrorMessage.from('Error al guardar info adicional del médico'));
-          }
-
-          res.status(201).json(ResponseMessage.from({
-            message: 'Médico creado correctamente',
-            id: medicoId
-          }, 201));
-        });
-      });
-    });
-  });
-}
-
-
-// Eliminar paciente (admin)
-const eliminarPaciente = (req, res) => {
-  const idAdmin = req.user.id
-  const idPaciente = req.params.id
-
-  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
-    if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
-
-    db.run(`DELETE FROM usuario WHERE id = ? AND tipo = 'paciente'`, [idPaciente], function (err) {
-      if (err) return res.status(500).json(ErrorMessage.from('Error al eliminar paciente'))
-      if (this.changes === 0)
-        return res.status(404).json(CustomStatusMessage.from(null, 404, 'Paciente no encontrado'))
-
-      res.status(200).json(ResponseMessage.from({ message: 'Paciente eliminado correctamente' }))
-    })
-  })
-}
-
 // Cargar consulta médica (médico)
 const cargarConsulta = (req, res) => {
   const idMedico = req.user.id
@@ -429,10 +316,8 @@ module.exports = {
   obtenerPerfil,
   actualizarPerfil,
   obtenerEspecialidades,
-  cargarMedico,
   cargarConsulta,
   allPacientes,
   buscarPacientePorDNI,
-  eliminarPaciente,
   verHistoriaClinica
 }

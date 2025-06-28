@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 
 // Ruta de la base de datos
-const dbPath = path.resolve(__dirname, 'ConsultorioUTN.db')
+const dbPath = path.resolve(__dirname, 'ConsultoriosUTN.db')
 
 // Crear carpeta si no existe
 if (!fs.existsSync(path.dirname(dbPath))) {
@@ -34,7 +34,7 @@ db.serialize(() => {
     telefono TEXT,
     email TEXT UNIQUE,
     password TEXT NOT NULL,
-    tipo TEXT CHECK(tipo IN ('paciente', 'medico')) NOT NULL
+    tipo TEXT CHECK(tipo IN ('paciente', 'medico', 'admin')) NOT NULL
   )`)
   // Tabla de especialidades
   db.run(`CREATE TABLE IF NOT EXISTS especialidad (
@@ -47,9 +47,10 @@ db.serialize(() => {
     matricula INTEGER NOT NULL UNIQUE,
     consultorio TEXT NOT NULL,
     especialidad_id INTEGER,
+    habilitado BOOLEAN NOT NULL DEFAULT 1,
     FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
     FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
-  )`)
+)`)
   // Información adicional de pacientes
   db.run(`CREATE TABLE IF NOT EXISTS paciente_info (
     usuario_id INTEGER PRIMARY KEY,

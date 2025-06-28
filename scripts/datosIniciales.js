@@ -30,31 +30,78 @@ const pacientes = [
   grupo_sanguineo: ['O+', 'A+', 'B+', 'AB+'][i % 4],
   obra_social: ['OSDE', 'Swiss Medical', 'Galeno', 'Medifé'][i % 4]
 }))
-
-const medicos = [
+const admins = [
   {
-    nombre: 'Juan Jose', apellido: 'Chaparro',
+    nombre: 'Juan Jose',
+    apellido: 'Chaparro',
     dni: '37389808',
     sexo: 'M',
     fecha_nac: '1993-01-16',
     telefono: '2914705104',
     email: 'chapapr@gmail.com',
     password: 'admin123',
-    tipo: 'medico',
-    matricula: 'MAT223311',
-    consultorio: 'Consultorio 1',
-    especialidadIndex: 0
+    tipo: 'admin',
   },
   {
-    nombre: 'Sebastian', apellido: 'Gañan',
+    nombre: 'Sebastian',
+    apellido: 'Gañan',
     dni: '22222222',
     sexo: 'M',
     fecha_nac: '1990-01-01',
     telefono: '291111111',
     email: 'sganan81@gmail.com',
     password: 'admin123',
+    tipo: 'admin',
+  },
+];
+
+async function cargarAdmins() {
+  try {
+    for (const admin of admins) {
+      const hash = await bcrypt.hash(admin.password, 10);
+      await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT OR IGNORE INTO usuario 
+           (nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, tipo)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            admin.nombre,
+            admin.apellido,
+            admin.dni,
+            admin.sexo,
+            admin.fecha_nac,
+            admin.telefono,
+            admin.email,
+            hash,
+            admin.tipo,
+          ],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+    }
+
+    console.log('✅ Usuarios administradores cargados correctamente.');
+  } catch (err) {
+    console.error('❌ Error al cargar administradores:', err.message);
+  }
+}
+const db = require('../db/db');
+const bcrypt = require('bcrypt');
+
+const medicos = [
+  {
+    nombre: 'Sebastian', apellido: 'Martinez',
+    dni: '34556243',
+    sexo: 'M',
+    fecha_nac: '1990-01-01',
+    telefono: '29132577',
+    email: 'sebmartinez@gmail.com',
+    password: 'admin123',
     tipo: 'medico',
-    matricula: 'MAT12312',
+    matricula: 'MAT121222',
     consultorio: 'Consultorio 4',
     especialidadIndex: 4
   },
@@ -84,7 +131,59 @@ const medicos = [
     consultorio: 'Consultorio 3',
     especialidadIndex: 3
   }
-]
+];
+
+async function cargarMedicos() {
+  try {
+    for (const m of medicos) {
+      const hash = await bcrypt.hash(m.password, 10);
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT OR IGNORE INTO usuario 
+           (nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, tipo)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            m.nombre,
+            m.apellido,
+            m.dni,
+            m.sexo,
+            m.fecha_nac,
+            m.telefono,
+            m.email,
+            hash,
+            m.tipo
+          ],
+          function (err) {
+            if (err) return reject(err);
+
+            const usuarioId = this.lastID;
+
+            db.run(
+              `INSERT OR REPLACE INTO medico_info 
+               (usuario_id, matricula, consultorio, especialidad_id, habilitado)
+               VALUES (?, ?, ?, ?, ?)`,
+              [
+                usuarioId,
+                m.matricula,
+                m.consultorio,
+                m.especialidadIndex + 1,
+                1 // habilitado = true
+              ],
+              (err) => (err ? reject(err) : resolve())
+            );
+          }
+        );
+      });
+    }
+
+    console.log('✅ Médicos cargados correctamente con habilitado = true.');
+  } catch (err) {
+    console.error('❌ Error al cargar médicos:', err.message);
+  }
+}
+
+
 
 async function cargarDatos() {
 
@@ -277,28 +376,6 @@ async function cargarDatos() {
       })
     }
 
-    // Cargar médicos
-    for (let i = 0; i < medicos.length; i++) {
-      const m = medicos[i]
-      const hash = await bcrypt.hash(m.password, 10)
-      await new Promise((resolve, reject) => {
-        db.run(`INSERT INTO usuario (nombre, apellido, dni, sexo, fecha_nac, telefono, email, password, tipo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [m.nombre, m.apellido, m.dni, m.sexo, m.fecha_nac, m.telefono, m.email, hash, m.tipo],
-          function (err) {
-            if (err) return reject(err)
-            const medicoId = this.lastID
-            if (i === 0) medico1Id = medicoId
-            db.run(`INSERT INTO medico_info (usuario_id, matricula, consultorio, especialidad_id)
-                    VALUES (?, ?, ?, ?)`,
-              [medicoId, m.matricula, m.consultorio, m.especialidadIndex + 1],
-              (err) => (err ? reject(err) : resolve())
-            )
-          }
-        )
-      })
-    }
-
     // Insertar historia clínica (3 por paciente)
     for (const pacienteId of pacientesIds) {
       for (let j = 0; j < 3; j++) {
@@ -340,5 +417,6 @@ async function cargarDatos() {
     console.error('❌ Error en la carga de datos:', err.message)
   }
 }
-
-cargarDatos()
+cargarMedicos();
+cargarDatos();
+cargarAdmins();

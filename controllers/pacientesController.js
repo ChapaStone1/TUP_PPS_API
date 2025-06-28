@@ -192,9 +192,8 @@ const verMiHistoriaClinica = (req, res) => {
   })
 }
 
-// Obtener todos los médicos con su información profesional
-const listarMedicos = (req, res) => {
-
+// Obtener todos los médicos habilitados con su información profesional
+const listarMedicosHabilitados = (req, res) => {
   const query = `
     SELECT 
       u.id,
@@ -212,7 +211,7 @@ const listarMedicos = (req, res) => {
     FROM usuario u
     LEFT JOIN medico_info mi ON u.id = mi.usuario_id
     LEFT JOIN especialidad e ON mi.especialidad_id = e.id
-    WHERE u.tipo = 'medico'
+    WHERE u.tipo = 'medico' AND mi.habilitado = 1
     ORDER BY u.apellido, u.nombre
   `;
 
@@ -226,12 +225,9 @@ const listarMedicos = (req, res) => {
 };
 
 
-
-
-
 module.exports = {
   obtenerPerfilPaciente,
   actualizarPerfilPaciente,
   verMiHistoriaClinica,
-  listarMedicos
+  listarMedicosHabilitados
 }
