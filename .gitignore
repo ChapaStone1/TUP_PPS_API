@@ -1,4 +1,5 @@
 scripts/datosIniciales.js
+scripts/extra.js
 .env
 node_modules
 key.env
