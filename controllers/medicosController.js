@@ -147,7 +147,7 @@ const allPacientes = (req, res) => {
     if (err || !row)
       return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
 
-    if (row.tipo !== 'medico')
+    if (row.tipo !== 'medico' || row.tipo !== 'admin')
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
     let query = `
@@ -228,7 +228,7 @@ const buscarPacientePorDNI = (req, res) => {
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'medico') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+    if (row.tipo !== 'medico' || row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.get(`
       SELECT u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, pi.grupo_sanguineo, pi.obra_social
