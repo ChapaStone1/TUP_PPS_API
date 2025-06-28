@@ -147,7 +147,8 @@ const allPacientes = (req, res) => {
     if (err || !row)
       return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
 
-    if (row.tipo !== 'medico' || row.tipo !== 'admin')
+    // Corregido: solo si NO es médico NI admin se deniega el acceso
+    if (row.tipo !== 'medico' && row.tipo !== 'admin')
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
     let query = `
@@ -167,13 +168,16 @@ const allPacientes = (req, res) => {
 
     query += ' ORDER BY u.apellido, u.nombre';
 
-    if (limit && !isNaN(parseInt(limit))) {
-      query += ' LIMIT ?';
-      params.push(parseInt(limit));
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
 
-      if (offset && !isNaN(parseInt(offset))) {
+    if (!isNaN(parsedLimit)) {
+      query += ' LIMIT ?';
+      params.push(parsedLimit);
+
+      if (!isNaN(parsedOffset)) {
         query += ' OFFSET ?';
-        params.push(parseInt(offset));
+        params.push(parsedOffset);
       }
     }
 
@@ -181,45 +185,51 @@ const allPacientes = (req, res) => {
       if (err)
         return res.status(500).json(ErrorMessage.from('Error al obtener los pacientes'));
 
-      const pacientesConHistoria = await Promise.all(
-        pacientes.map((paciente) => {
-          return new Promise((resolve, reject) => {
-            db.all(
-              `
-              SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
-                     u.id AS medico_id, u.nombre AS medico_nombre, u.apellido AS medico_apellido
-              FROM historia_clinica hc
-              LEFT JOIN usuario u ON u.id = hc.medico_id
-              WHERE hc.usuario_id = ?
-              ORDER BY hc.fecha DESC
-              `,
-              [paciente.id],
-              (err, historia) => {
-                if (err) return reject(err);
+      try {
+        const pacientesConHistoria = await Promise.all(
+          pacientes.map((paciente) => {
+            return new Promise((resolve, reject) => {
+              db.all(
+                `
+                SELECT hc.id, hc.fecha, hc.medicacion, hc.nota,
+                       u.id AS medico_id, u.nombre AS medico_nombre, u.apellido AS medico_apellido
+                FROM historia_clinica hc
+                LEFT JOIN usuario u ON u.id = hc.medico_id
+                WHERE hc.usuario_id = ?
+                ORDER BY hc.fecha DESC
+                `,
+                [paciente.id],
+                (err, historia) => {
+                  if (err) return reject(err);
 
-                const historiaFormateada = historia.map((entry) => ({
-                  id: entry.id,
-                  fecha: entry.fecha,
-                  medicacion: entry.medicacion,
-                  nota: entry.nota,
-                  medico: {
-                    id: entry.medico_id,
-                    nombre: entry.medico_nombre,
-                    apellido: entry.medico_apellido
-                  },
-                }));
+                  const historiaFormateada = historia.map((entry) => ({
+                    id: entry.id,
+                    fecha: entry.fecha,
+                    medicacion: entry.medicacion,
+                    nota: entry.nota,
+                    medico: {
+                      id: entry.medico_id,
+                      nombre: entry.medico_nombre,
+                      apellido: entry.medico_apellido
+                    },
+                  }));
 
-                resolve({ ...paciente, historia_clinica: historiaFormateada });
-              }
-            );
-          });
-        })
-      );
+                  resolve({ ...paciente, historia_clinica: historiaFormateada });
+                }
+              );
+            });
+          })
+        );
 
-      res.status(200).json(ResponseMessage.from(pacientesConHistoria));
+        res.status(200).json(ResponseMessage.from(pacientesConHistoria));
+      } catch (e) {
+        console.error(e);
+        res.status(500).json(ErrorMessage.from('Error al obtener historias clínicas'));
+      }
     });
   });
-}
+};
+
 
 // Buscar paciente por DNI (médico)
 const buscarPacientePorDNI = (req, res) => {
@@ -228,7 +238,7 @@ const buscarPacientePorDNI = (req, res) => {
 
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
     if (err || !row) return res.status(500).json(ErrorMessage.from('Error al verificar permisos'))
-    if (row.tipo !== 'medico' || row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
+    if (row.tipo !== 'medico' && row.tipo !== 'admin') return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'))
 
     db.get(`
       SELECT u.id, u.nombre, u.apellido, u.dni, u.sexo, u.fecha_nac, u.telefono, u.email, pi.grupo_sanguineo, pi.obra_social

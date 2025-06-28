@@ -160,7 +160,7 @@ const cambiarHabilitacionMedico = (req, res) => {
   });
 };
 
-// Obtener todos los médicos habilitados con su información profesional (solo para admin)
+// Obtener todos los médicos 
 const listarMedicos = (req, res) => {
   const idAdmin = req.user.id;
 
