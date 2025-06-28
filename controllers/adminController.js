@@ -164,7 +164,6 @@ const cambiarHabilitacionMedico = (req, res) => {
 const listarMedicos = (req, res) => {
   const idAdmin = req.user.id;
 
-  // Verificar permisos del usuario que hace la solicitud
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
     if (err || !row) {
       return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
@@ -174,7 +173,6 @@ const listarMedicos = (req, res) => {
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
     }
 
-    // Consulta SQL solo si es admin
     const query = `
       SELECT 
         u.id,
@@ -187,12 +185,13 @@ const listarMedicos = (req, res) => {
         u.email,
         mi.matricula,
         mi.consultorio,
+        mi.habilitado,
         e.id AS especialidad_id,
         e.nombre AS especialidad_nombre
       FROM usuario u
       LEFT JOIN medico_info mi ON u.id = mi.usuario_id
       LEFT JOIN especialidad e ON mi.especialidad_id = e.id
-      WHERE u.tipo = 'medico' AND mi.habilitado = 1
+      WHERE u.tipo = 'medico'
       ORDER BY u.apellido, u.nombre
     `;
 
@@ -205,6 +204,7 @@ const listarMedicos = (req, res) => {
     });
   });
 };
+
 
 
 module.exports = {
