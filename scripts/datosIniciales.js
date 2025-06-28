@@ -88,9 +88,6 @@ async function cargarAdmins() {
     console.error('❌ Error al cargar administradores:', err.message);
   }
 }
-const db = require('../db/db');
-const bcrypt = require('bcrypt');
-
 const medicos = [
   {
     nombre: 'Sebastian', apellido: 'Martinez',

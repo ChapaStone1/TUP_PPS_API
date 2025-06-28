@@ -21,7 +21,7 @@ app.use('/api/pacientes', pacienteRoutes) // GET y PUT /api/pacientes/mi-perfil,
 app.use('/api/medicos', medicoRoutes)     // GET PUT /api/medicos/perfil, GET /api/medicos/buscar-paciente/:dni, POST /api/medicos/cargar, delete /api/medicos/eliminar-paciente/:id, GET /api/medicos/historia-clinica/:id
 
 app.get('/', (req, res) => {
-  res.send('Consultorio UTN API en funcionamiento')
+  res.send('Consultorios Médicos UTN API en funcionamiento')
 })
 
 const port = parseInt(process.env.PORT) || 3000;
