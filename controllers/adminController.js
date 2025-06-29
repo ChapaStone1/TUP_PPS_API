@@ -220,21 +220,22 @@ const allUsers = (req, res) => {
       SELECT 
         id, nombre, apellido, dni, sexo, fecha_nac, telefono, email, tipo
       FROM usuario
-      WHERE id NOT IN (SELECT usuario_id FROM medico_info)
-        AND id NOT IN (SELECT usuario_id FROM paciente_info)
     `;
-    
-    const params = [];
 
-    // Filtro opcional por dni
+    const params = [];
+    const conditions = [];
+
     if (dni) {
-      query += ' AND dni LIKE ?';
+      conditions.push('dni LIKE ?');
       params.push(`%${dni}%`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY apellido, nombre';
 
-    // Limit y offset opcionales
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
