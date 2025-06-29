@@ -205,11 +205,97 @@ const listarMedicos = (req, res) => {
   });
 };
 
+const allUsers = (req, res) => {
+  const idUsuario = req.user.id;
+  const { dni, limit, offset } = req.query;
 
+  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idUsuario], (err, row) => {
+    if (err || !row)
+      return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
+
+    if (row.tipo !== 'admin')
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
+
+    let query = `
+      SELECT 
+        id, nombre, apellido, dni, sexo, fecha_nac, telefono, email, tipo
+      FROM usuario
+      WHERE id NOT IN (SELECT usuario_id FROM medico_info)
+        AND id NOT IN (SELECT usuario_id FROM paciente_info)
+    `;
+    
+    const params = [];
+
+    // Filtro opcional por dni
+    if (dni) {
+      query += ' AND dni LIKE ?';
+      params.push(`%${dni}%`);
+    }
+
+    query += ' ORDER BY apellido, nombre';
+
+    // Limit y offset opcionales
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    if (!isNaN(parsedLimit)) {
+      query += ' LIMIT ?';
+      params.push(parsedLimit);
+
+      if (!isNaN(parsedOffset)) {
+        query += ' OFFSET ?';
+        params.push(parsedOffset);
+      }
+    }
+
+    db.all(query, params, (err, rows) => {
+      if (err)
+        return res.status(500).json(ErrorMessage.from('Error al obtener usuarios'));
+
+      res.status(200).json(ResponseMessage.from(rows));
+    });
+  });
+};
+
+
+const resetearPassword = (req, res) => {
+  const idAdmin = req.user.id;
+  const idUsuarioTarget = req.params.id;
+
+  db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, adminRow) => {
+    if (err || !adminRow)
+      return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
+
+    if (adminRow.tipo !== 'admin')
+      return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
+
+    db.get(`SELECT dni FROM usuario WHERE id = ?`, [idUsuarioTarget], async (err, userRow) => {
+      if (err || !userRow)
+        return res.status(404).json(ErrorMessage.from('Usuario no encontrado'));
+
+      const nuevaClave = 'clave' + userRow.dni;
+
+      try {
+        const hashedPassword = await bcrypt.hash(nuevaClave, 10);
+
+        db.run(`UPDATE usuario SET password = ? WHERE id = ?`, [hashedPassword, idUsuarioTarget], function(err) {
+          if (err)
+            return res.status(500).json(ErrorMessage.from('Error al actualizar contraseña'));
+
+          res.status(200).json(ResponseMessage.from(`Contraseña restablecida para el usuario ${idUsuarioTarget}, password: "${nuevaClave}"`));
+        });
+      } catch (e) {
+        res.status(500).json(ErrorMessage.from('Error al encriptar la contraseña'));
+      }
+    });
+  });
+}
 
 module.exports = {
   cargarMedico,
   eliminarPaciente,
   cambiarHabilitacionMedico,
-  listarMedicos
+  listarMedicos,
+  resetearPassword,
+  allUsers
 }

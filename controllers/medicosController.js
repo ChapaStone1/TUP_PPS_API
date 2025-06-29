@@ -5,7 +5,7 @@ const CustomStatusMessage = require('../models/CustomStatusMessage')
 const bcrypt = require('bcrypt')
 const GeneralValidator = require('../validators/GeneralValidator');
 
-// Obtener perfil del usuario (médico)
+// Obtener perfil del usuario médico
 const obtenerPerfil = (req, res) => {
   const idUsuario = req.user.id
 
@@ -26,9 +26,9 @@ const obtenerPerfil = (req, res) => {
     res.status(200).json(ResponseMessage.from(row))
   })
 }
-
+// Actualizar perfil de usuario medico
 const actualizarPerfil = async (req, res) => {
-  const idUsuario = req.user.id // o como lo tengas
+  const idUsuario = req.user.id 
   const {
     nombre,
     apellido,
@@ -43,11 +43,10 @@ const actualizarPerfil = async (req, res) => {
     especialidad_id,
   } = req.body;
 
-  // Primero validar disponibilidad de dni, email y matrícula excluyendo al usuario actual:
+  // Primero validar disponibilidad de dni, email excluyendo al usuario actual:
   try {
     const validation = await GeneralValidator.validateUpdate({ dni, email, idUsuario });
 
-    // Si hay errores, responder con ellos
     if (!validation.valid) {
       return res.status(400).json({
         ok: false,
@@ -75,7 +74,6 @@ const actualizarPerfil = async (req, res) => {
       );
     }
 
-    // Ya validado, continuar con la actualización
     const actualizarUsuario = (hash = null) => {
       const queryUsuario = hash
         ? `UPDATE usuario SET nombre = ?, apellido = ?, dni = ?, sexo = ?, fecha_nac = ?, telefono = ?, email = ?, password = ? WHERE id = ?`
@@ -126,7 +124,7 @@ const actualizarPerfil = async (req, res) => {
   }
 };
 
-// Obtener todas las especialidades
+// Obtener todas las especialidades, no requiere permisos
 const obtenerEspecialidades = (req, res) => {
   const query = `SELECT id, nombre FROM especialidad ORDER BY nombre`
 
@@ -138,7 +136,7 @@ const obtenerEspecialidades = (req, res) => {
   })
 }
 
-// Obtener todos los pacientes (médico) y por query busca por DNI
+// Obtener todos los pacientes y por query busca por DNI, limit y offset para paginar
 const allPacientes = (req, res) => {
   const idUsuario = req.user.id;
   const { dni, limit, offset } = req.query;
@@ -286,7 +284,7 @@ const cargarConsulta = (req, res) => {
   })
 }
 
-// Ver historia clínica de un paciente (médico o el mismo paciente)
+// Ver historia clínica de un paciente (médico)
 const verHistoriaClinica = (req, res) => {
   const idUsuario = req.user.id
   const idPaciente = req.params.id

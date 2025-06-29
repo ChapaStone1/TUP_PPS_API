@@ -19,11 +19,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 })
 
-// Crear tablas
+
 db.serialize(() => {
   
-
-  // Tabla de usuarios
   db.run(`CREATE TABLE IF NOT EXISTS usuario (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
@@ -36,12 +34,10 @@ db.serialize(() => {
     password TEXT NOT NULL,
     tipo TEXT CHECK(tipo IN ('paciente', 'medico', 'admin')) NOT NULL
   )`)
-  // Tabla de especialidades
   db.run(`CREATE TABLE IF NOT EXISTS especialidad (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL UNIQUE
   )`)
-  // Información adicional de médicos
   db.run(`CREATE TABLE IF NOT EXISTS medico_info (
     usuario_id INTEGER PRIMARY KEY,
     matricula INTEGER NOT NULL UNIQUE,
@@ -51,14 +47,12 @@ db.serialize(() => {
     FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
     FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
 )`)
-  // Información adicional de pacientes
   db.run(`CREATE TABLE IF NOT EXISTS paciente_info (
     usuario_id INTEGER PRIMARY KEY,
     grupo_sanguineo TEXT CHECK(grupo_sanguineo IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
     obra_social TEXT,
     FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
   )`)
-  // Historia clínica
   db.run(`CREATE TABLE IF NOT EXISTS historia_clinica (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id INTEGER NOT NULL,

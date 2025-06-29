@@ -8,7 +8,7 @@ const ErrorMessage = require('../models/ErrorMessage')
 const CustomStatusMessage = require('../models/CustomStatusMessage')
 const GeneralValidator = require('../validators/GeneralValidator');
 
-// Registrar solo pacientes
+// Registrar un nuevo paciente
 const register = async (req, res) => {
   const {
     nombre,

@@ -5,7 +5,7 @@ const CustomStatusMessage = require('../models/CustomStatusMessage')
 const GeneralValidator = require('../validators/GeneralValidator');
 const bcrypt = require('bcrypt')
 
-// Obtener perfil del paciente (solo si es paciente)
+// Obtener perfil del paciente
 const obtenerPerfilPaciente = (req, res) => {
   const idUsuario = req.user.id
 
@@ -29,7 +29,7 @@ const obtenerPerfilPaciente = (req, res) => {
   })
 }
 
-// Actualizar perfil del paciente (solo el mismo paciente)
+// Actualizar perfil del paciente
 const actualizarPerfilPaciente = async (req, res) => {
   const idUsuario = req.user.id;
   const {
@@ -42,7 +42,7 @@ const actualizarPerfilPaciente = async (req, res) => {
     password,
     grupo_sanguineo,
     obra_social,
-    dni // llega solo para validación, no se actualiza
+    dni 
   } = req.body;
 
   try {
@@ -78,7 +78,6 @@ const actualizarPerfilPaciente = async (req, res) => {
       );
     }
 
-    // Validar grupo sanguíneo
     if (!GeneralValidator.validateGrupoSanguineo(grupo_sanguineo)) {
       return res.status(400).json(
         CustomStatusMessage.from(null, 400, 'Grupo sanguíneo inválido')
@@ -151,8 +150,6 @@ const actualizarPerfilPaciente = async (req, res) => {
     actualizarUsuario();
   }
 };
-
-
 
 // Ver historia clínica del propio paciente
 const verMiHistoriaClinica = (req, res) => {
