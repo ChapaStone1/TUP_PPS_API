@@ -1,4 +1,5 @@
-API Y BASE DE DATOS - TUP PPS 2025
+### API Y BASE DE DATOS
+### UTN - TUP | PPS 2025
 
 ## Descripción
 TUP PPS API es la parte del backend de un proyecto para las **PPS** de la Tecnicatura Universitaria en Programación (UTN FRBB). Esta API, construida con **Node.js** y **Express.js**, proporciona funcionalidades para un Consultorio Médico: la gestión de usuarios, autenticación mediante JWT (JSON Web Tokens), y conexión a una base de datos MySQL.
