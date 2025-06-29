@@ -1,8 +1,9 @@
-### API Y BASE DE DATOS
-### UTN - TUP | PPS 2025
+# API Y BASE DE DATOS
+# UTN - TUP | PPS 2025
+# Alumno Juan Jose Chaparro
 
 ## Descripción
-TUP PPS API es la parte del backend de un proyecto para las **PPS** de la Tecnicatura Universitaria en Programación (UTN FRBB). Esta API, construida con **Node.js** y **Express.js**, proporciona funcionalidades para un Consultorio Médico: la gestión de usuarios, autenticación mediante JWT (JSON Web Tokens), y conexión a una base de datos MySQL.
+El repositorio contiene la parte del backend de un proyecto para las **PPS** de la Tecnicatura Universitaria en Programación (UTN FRBB). Esta API, construida con **Node.js** y **Express.js**, proporciona funcionalidades para un Consultorio Médico: la gestión de usuarios, autenticación mediante JWT (JSON Web Tokens), y conexión a una base de datos MySQL.
 
 ## Características
 - **Autenticación de usuarios**: Registro e inicio de sesión con JWT y encriptación de contraseñas usando `bcryptjs`.
@@ -13,7 +14,6 @@ TUP PPS API es la parte del backend de un proyecto para las **PPS** de la Tecnic
 ## Requisitos Previos
 - **Node.js** (v16 o superior)
 - **sqlite3** (v8 o superior)
-- **Docker** y **Docker Compose** (opcional, para despliegue en contenedores)
 - **Git** (para clonar el repositorio)
 
 ## Instalación
@@ -45,13 +45,12 @@ Sigue estos pasos para configurar el proyecto localmente:
    ```
    La API estará disponible en `http://localhost:3000` (o el puerto configurado en `.env`).
 
-
 ## 🔐 Autenticación
 
 ### 📝 Registrar paciente
 
 - **Método:** `POST`  
-- **Ruta:** `/api/auth/register`
+- **Ruta:** `/api/auth/register-paciente`
 
 #### 📥 Request Body:
 ```json
@@ -101,12 +100,11 @@ Sigue estos pasos para configurar el proyecto localmente:
 }
 ```
 
-
 ---
 
-## 📌 Endpoints para Administradores (Todos requieren Token)
+## 📌 Endpoints para Administradores (Todos requieren Token y ser usuario tipo admin)
 
-### ➕ Crear médico (requiere token y ser usuario tipo medico)
+### ➕ Crear médico
 
 - **Método:** `POST`  
 - **Ruta:** `/api/medicos/cargar-medico`
@@ -138,7 +136,7 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 ---
 
-### ❌ Eliminar paciente (requiere token y ser usuario tipo medico)
+### ❌ Eliminar paciente
 
 - **Método:** `DELETE`  
 - **Ruta:** `/api/medicos/eliminar-paciente/:idpaciente`
@@ -152,18 +150,15 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 ---
 
-### 🔁 PATCH `/admin/habilitacion-medico/:id`
+### 🔁 Habilitar/Deshabilitar médico (para que el médico se muestre disponible en la lista que ven los pacientes)
 
-Habilita o deshabilita un médico.
+- **Método:** `PATCH`  
+- **Ruta:** `/admin/habilitacion-medico/:id`
 
 #### Parámetro:
 - `:id` → ID del médico (`usuario_id`)
 
-#### Lógica:
-- Si está habilitado → lo deshabilita.
-- Si está deshabilitado → lo habilita.
-
-#### Respuesta exitosa:
+#### Respuesta:
 ```json
 {
   "status": 200,
@@ -173,11 +168,12 @@ Habilita o deshabilita un médico.
 
 ---
 
-### 📄 GET `/admin/all-medicos`
+### 📄 Listar todos los médicos
 
-Lista completa de todos los médicos del sistema, con información adicional.
+- **Método:** `GET`  
+- **Ruta:** `/admin/all-medicos`
 
-#### Respuesta exitosa:
+#### 📤 Respuesta:
 ```json
 {
   "status": 200,
@@ -203,21 +199,17 @@ Lista completa de todos los médicos del sistema, con información adicional.
 
 ---
 
-### 👥 GET `/admin/all-users`
+### 👥 Listar usuarios
 
-Lista usuarios del sistema (pacientes, médicos, administradores), con soporte para paginación y filtrado por DNI.
+- **Método:** `GET`  
+- **Ruta:** `/admin/all-users`
 
 #### Query params:
 - `dni` → (opcional) filtro parcial por DNI
 - `limit` → (opcional) cantidad máxima de resultados
 - `offset` → (opcional) desde qué índice empezar
 
-#### Ejemplo:
-```
-GET /admin/all-users?dni=123&limit=10&offset=0
-```
-
-#### Respuesta:
+#### 📤 Respuesta:
 ```json
 {
   "status": 200,
@@ -239,31 +231,24 @@ GET /admin/all-users?dni=123&limit=10&offset=0
 
 ---
 
-### 🔄 PATCH `/admin/reset-password/:id`
+### 🔄 Resetear contraseña
 
-Restablece la contraseña de cualquier usuario. La nueva contraseña será:
+- **Método:** `PATCH`  
+- **Ruta:** `/admin/reset-password/:id`
 
-```
-clave<DNI>
-```
-
-#### Parámetro:
-- `:id` → ID del usuario al que se le reinicia la contraseña
-
-#### Respuesta:
+#### 📤 Respuesta:
 ```json
 {
   "status": 200,
-  "data": "Contraseña restablecida para el usuario 3, password: \"clave12345678\""
+  "data": "Contraseña restablecida para el usuario 3, password: "clave12345678""
 }
 ```
 
 ---
 
-
 ## 📌 Endpoints para Pacientes
 
-### ✅ Obtener perfil del paciente (requiere token)
+### ✅ Obtener perfil
 
 - **Método:** `GET`  
 - **Ruta:** `/api/pacientes/mi-perfil` 
@@ -286,7 +271,7 @@ clave<DNI>
 
 ---
 
-### 📝 Actualizar perfil del paciente (requiere token)
+### 📝 Actualizar perfil
 
 - **Método:** `PUT`  
 - **Ruta:** `/api/pacientes/mi-perfil`
@@ -316,7 +301,7 @@ clave<DNI>
 
 ---
 
-### 📚 Ver historia clínica propia (requiere token)
+### 📚 Ver historia clínica
 
 - **Método:** `GET`  
 - **Ruta:** `/api/pacientes/historia-clinica`
@@ -341,7 +326,7 @@ clave<DNI>
 
 ## ⚙️ Endpoints para Médicos
 
-### ✅ Obtener perfil del médico (requiere token)
+### ✅ Obtener perfil
 
 - **Método:** `GET`  
 - **Ruta:** `/api/medicos/mi-perfil`
@@ -367,7 +352,7 @@ clave<DNI>
 
 ---
 
-### 📝 Actualizar perfil del médico (requiere token)
+### 📝 Actualizar perfil
 
 - **Método:** `PUT`  
 - **Ruta:** `/api/medicos/mi-perfil`
@@ -398,7 +383,7 @@ clave<DNI>
 
 ---
 
-### 📑 Obtener todas las especialidades
+### 📑 Obtener especialidades
 
 - **Método:** `GET`  
 - **Ruta:** `/api/medicos/especialidades`
@@ -413,7 +398,7 @@ clave<DNI>
 
 ---
 
-### 👨‍⚕️ Ver todos los pacientes (requiere token)
+### 👨‍⚕️ Ver todos los pacientes
 
 - **Método:** `GET`  
 - **Ruta:** `/api/medicos/all-pacientes?dni=1234&limit=10&offset=0`
@@ -451,7 +436,7 @@ clave<DNI>
 
 ---
 
-### 🔍 Buscar paciente por DNI (requiere token)
+### 🔍 Buscar paciente por DNI
 
 - **Método:** `GET`  
 - **Ruta:** `/api/medicos/buscar-paciente/:dni`
@@ -474,7 +459,7 @@ clave<DNI>
 
 ---
 
-### 🩺 Cargar consulta médica (requiere token)
+### 🩺 Cargar consulta médica
 
 - **Método:** `POST`  
 - **Ruta:** `/api/medicos/cargar-consulta/:idpaciente`
@@ -497,11 +482,7 @@ clave<DNI>
 
 ---
 
-
-
----
-
-### 📋 Ver historia clínica por id (requiere token)
+### 📋 Ver historia clínica por ID
 
 - **Método:** `GET`  
 - **Ruta:** `/api/medicos/historia-clinica/:id`
@@ -524,7 +505,7 @@ clave<DNI>
 
 ---
 
-## Estructura del Proyecto
+## 🗂 Estructura del Proyecto
 ```plaintext
 TUP_PPS_API/
 ├── /controllers/    # Lógica de negocio para los endpoints
@@ -538,6 +519,5 @@ TUP_PPS_API/
 └── index.js         # Punto de entrada de la aplicación
 ```
 
-
-## Contacto
-Para dudas o sugerencias, contacta al autor del repositorio a través de GitHub: [ChapaStone1](https://github.com/ChapaStone1).
+## 📬 Contacto
+Para dudas o sugerencias, contacta al autor del repositorio a través de GitHub: [ChapaStone1](https://github.com/ChapaStone1)
