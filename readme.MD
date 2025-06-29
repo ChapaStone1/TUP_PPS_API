@@ -103,6 +103,162 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 ---
 
+## 📌 Endpoints para Administradores (Todos requieren Token)
+
+### ➕ Crear médico (requiere token y ser usuario tipo medico)
+
+- **Método:** `POST`  
+- **Ruta:** `/api/medicos/cargar-medico`
+
+#### 📥 Request Body:
+```json
+{
+  "nombre": "Laura",
+  "apellido": "Sosa",
+  "dni": "55667788",
+  "sexo": "femenino",
+  "fecha_nac": "1985-08-20",
+  "telefono": "555667788",
+  "email": "laura@example.com",
+  "password": "clave123",
+  "matricula": "MP67890",
+  "consultorio": "202",
+  "especialidad_id": 2
+}
+```
+
+#### 📤 Respuesta:
+```json
+{
+  "message": "Médico creado correctamente",
+  "id": 3
+}
+```
+
+---
+
+### ❌ Eliminar paciente (requiere token y ser usuario tipo medico)
+
+- **Método:** `DELETE`  
+- **Ruta:** `/api/medicos/eliminar-paciente/:idpaciente`
+
+#### 📤 Respuesta:
+```json
+{
+  "message": "Paciente eliminado correctamente"
+}
+```
+
+---
+
+### 🔁 PATCH `/admin/habilitacion-medico/:id`
+
+Habilita o deshabilita un médico.
+
+#### Parámetro:
+- `:id` → ID del médico (`usuario_id`)
+
+#### Lógica:
+- Si está habilitado → lo deshabilita.
+- Si está deshabilitado → lo habilita.
+
+#### Respuesta exitosa:
+```json
+{
+  "status": 200,
+  "message": "Médico habilitado correctamente"
+}
+```
+
+---
+
+### 📄 GET `/admin/all-medicos`
+
+Lista completa de todos los médicos del sistema, con información adicional.
+
+#### Respuesta exitosa:
+```json
+{
+  "status": 200,
+  "data": [
+    {
+      "id": 14,
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "dni": "12345678",
+      "sexo": "M",
+      "fecha_nac": "1980-01-01",
+      "telefono": "1122334455",
+      "email": "juan@example.com",
+      "matricula": "MAT123",
+      "consultorio": "Consultorio 1",
+      "habilitado": 1,
+      "especialidad_id": 2,
+      "especialidad_nombre": "Cardiología"
+    }
+  ]
+}
+```
+
+---
+
+### 👥 GET `/admin/all-users`
+
+Lista usuarios del sistema (pacientes, médicos, administradores), con soporte para paginación y filtrado por DNI.
+
+#### Query params:
+- `dni` → (opcional) filtro parcial por DNI
+- `limit` → (opcional) cantidad máxima de resultados
+- `offset` → (opcional) desde qué índice empezar
+
+#### Ejemplo:
+```
+GET /admin/all-users?dni=123&limit=10&offset=0
+```
+
+#### Respuesta:
+```json
+{
+  "status": 200,
+  "data": [
+    {
+      "id": 3,
+      "nombre": "Ana",
+      "apellido": "Gómez",
+      "dni": "12345678",
+      "sexo": "F",
+      "fecha_nac": "1990-05-10",
+      "telefono": "1122448899",
+      "email": "ana@gmail.com",
+      "tipo": "paciente"
+    }
+  ]
+}
+```
+
+---
+
+### 🔄 PATCH `/admin/reset-password/:id`
+
+Restablece la contraseña de cualquier usuario. La nueva contraseña será:
+
+```
+clave<DNI>
+```
+
+#### Parámetro:
+- `:id` → ID del usuario al que se le reinicia la contraseña
+
+#### Respuesta:
+```json
+{
+  "status": 200,
+  "data": "Contraseña restablecida para el usuario 3, password: \"clave12345678\""
+}
+```
+
+---
+
 
 ## 📌 Endpoints para Pacientes
 
@@ -182,7 +338,7 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 ---
 
-## ⚙️ Endpoints para Admin / Médicos
+## ⚙️ Endpoints para Médicos
 
 ### ✅ Obtener perfil del médico (requiere token)
 
@@ -341,49 +497,6 @@ Sigue estos pasos para configurar el proyecto localmente:
 ---
 
 
-### ➕ Crear médico (requiere token y ser usuario tipo medico)
-
-- **Método:** `POST`  
-- **Ruta:** `/api/medicos/cargar-medico`
-
-#### 📥 Request Body:
-```json
-{
-  "nombre": "Laura",
-  "apellido": "Sosa",
-  "dni": "55667788",
-  "sexo": "femenino",
-  "fecha_nac": "1985-08-20",
-  "telefono": "555667788",
-  "email": "laura@example.com",
-  "password": "clave123",
-  "matricula": "MP67890",
-  "consultorio": "202",
-  "especialidad_id": 2
-}
-```
-
-#### 📤 Respuesta:
-```json
-{
-  "message": "Médico creado correctamente",
-  "id": 3
-}
-```
-
----
-
-### ❌ Eliminar paciente (requiere token y ser usuario tipo medico)
-
-- **Método:** `DELETE`  
-- **Ruta:** `/api/medicos/eliminar-paciente/:idpaciente`
-
-#### 📤 Respuesta:
-```json
-{
-  "message": "Paciente eliminado correctamente"
-}
-```
 
 ---
 
