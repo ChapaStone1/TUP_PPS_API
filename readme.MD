@@ -3,17 +3,17 @@
 # Alumno Juan Jose Chaparro
 
 ## Descripción
-El repositorio contiene la parte del backend de un proyecto para las **PPS** de la Tecnicatura Universitaria en Programación (UTN FRBB). Esta API, construida con **Node.js** y **Express.js**, proporciona funcionalidades para un Consultorio Médico: la gestión de usuarios, autenticación mediante JWT (JSON Web Tokens), y conexión a una base de datos MySQL.
+El repositorio contiene la parte del backend de un proyecto para las **PPS** de la Tecnicatura Universitaria en Programación (UTN FRBB). Esta API, construida con **Node.js** y **Express.js**, proporciona funcionalidades para un Consultorio Médico: la gestión de usuarios, autenticación mediante JWT (JSON Web Tokens), y conexión a una base de datos SQLite.
 
 ## Características
 - **Autenticación de usuarios**: Registro e inicio de sesión con JWT y encriptación de contraseñas usando `bcryptjs`.
 - **Gestión de usuarios**: Creación, lectura, actualización y eliminación de usuarios.
-- **Conexión a base de datos**: Integración con sqlite3 para almacenar datos de usuarios y otras entidades.
+- **Conexión a base de datos**: Integración con `sqlite3` para almacenar datos de usuarios y otras entidades.
 - **Endpoints RESTful**: API diseñada para operaciones CRUD.
 
 ## Requisitos Previos
 - **Node.js** (v16 o superior)
-- **sqlite3** (v8 o superior)
+- **sqlite3**
 - **Git** (para clonar el repositorio)
 
 ## Instalación
@@ -33,17 +33,33 @@ Sigue estos pasos para configurar el proyecto localmente:
 3. **Configura las variables de entorno**:
    Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
    ```env
-    SECRET_KEY=Clave123
-    JWT_SECRET=miclavesecreta123
-    PORT=3000
+   SECRET_KEY=Clave123
+   JWT_SECRET=miclavesecreta123
+   PORT=3000
    ```
-   Asegúrate de reemplazar los valores con los correspondientes a tu entorno.
 
 4. **Inicia el servidor**:
    ```bash
-   npm run start
+   npm start
    ```
-   La API estará disponible en `http://localhost:3000` (o el puerto configurado en `.env`).
+
+La API estará disponible en `http://localhost:3000`.
+
+## 📜 Scripts disponibles
+
+| Script            | Descripción                                                                |
+|-------------------|----------------------------------------------------------------------------|
+| `npm start`       | Inicia el servidor (`node app`)                                            |
+| `npm run watch`   | Inicia el servidor y se reinicia automáticamente al detectar cambios       |
+| `npm test`        | Script de prueba genérico (no implementado actualmente)                    |
+| `npm run lint`    | Ejecuta lint con corrección automática (`eslint . --fix`)                  |
+| `npm run standard`| Ejecuta el formateador de código StandardJS                                |
+
+## 🛠 Recomendaciones para desarrollo
+- Asegurate de tener el archivo `.env` configurado.
+- Usá `npm run watch` durante el desarrollo para reinicio automático del servidor.
+
+# Endpoints
 
 ## 🔐 Autenticación
 
