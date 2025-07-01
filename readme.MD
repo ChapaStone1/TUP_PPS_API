@@ -27,7 +27,7 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 2. **Instala las dependencias**:
    ```bash
-   npm install
+   npm install express sqlite3 bcrypt cors dotenv jsonwebtoken
    ```
 
 3. **Configura las variables de entorno**:
@@ -40,26 +40,21 @@ Sigue estos pasos para configurar el proyecto localmente:
 
 4. **Inicia el servidor**:
    ```bash
-   npm start
+   npm run start
    ```
 
 La API estará disponible en `http://localhost:3000`.
 
-## 📜 Scripts disponibles
+## Base de datos
 
-| Script            | Descripción                                                                |
-|-------------------|----------------------------------------------------------------------------|
-| `npm start`       | Inicia el servidor (`node app`)                                            |
-| `npm run watch`   | Inicia el servidor y se reinicia automáticamente al detectar cambios       |
-| `npm test`        | Script de prueba genérico (no implementado actualmente)                    |
-| `npm run lint`    | Ejecuta lint con corrección automática (`eslint . --fix`)                  |
-| `npm run standard`| Ejecuta el formateador de código StandardJS                                |
+Diagrama entidad-relación:  
+![Diagrama ER](doc/diagramaER.png)
 
-## 🛠 Recomendaciones para desarrollo
-- Asegurate de tener el archivo `.env` configurado.
-- Usá `npm run watch` durante el desarrollo para reinicio automático del servidor.
 
 # Endpoints
+
+Los endpoints fueron diseñados en función de las acciones específicas que puede realizar cada tipo de usuario. Por ejemplo, el usuario administrador tiene permisos para resetear contraseñas de cualquier usuario o eliminar pacientes, el usuario médico puede cargar consultas, listar pacientes, modificar su perfil, y el usuario paciente que puede modificar su perfil y ver su historia clinica.
+
 
 ## 🔐 Autenticación
 
