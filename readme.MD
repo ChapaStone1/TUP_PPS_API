@@ -11,11 +11,6 @@ El repositorio contiene la parte del backend de un proyecto para las **PPS** de 
 - **Conexión a base de datos**: Integración con `sqlite3` para almacenar datos de usuarios y otras entidades.
 - **Endpoints RESTful**: API diseñada para operaciones CRUD.
 
-## Requisitos Previos
-- **Node.js** (v16 o superior)
-- **sqlite3**
-- **Git** (para clonar el repositorio)
-
 ## Instalación
 Sigue estos pasos para configurar el proyecto localmente:
 
