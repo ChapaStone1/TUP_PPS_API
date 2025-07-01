@@ -1,4 +1,4 @@
-# API Y BASE DE DATOS
+# Backend - Api y base de datos
 # UTN - TUP | PPS 2025
 # Alumno Juan Jose Chaparro
 
@@ -213,7 +213,7 @@ Los endpoints fueron diseñados en función de las acciones específicas que pue
 ### 👥 Listar usuarios
 
 - **Método:** `GET`  
-- **Ruta:** `/admin/all-users`
+- **Ruta:** `/admin/all-users?dni=1234&limit=10&offset=0`
 
 #### Query params:
 - `dni` → (opcional) filtro parcial por DNI
@@ -529,6 +529,3 @@ TUP_PPS_API/
 ├── .env             # Variables de entorno (no incluido en el repositorio)
 └── index.js         # Punto de entrada de la aplicación
 ```
-
-## 📬 Contacto
-Para dudas o sugerencias, contacta al autor del repositorio a través de GitHub: [ChapaStone1](https://github.com/ChapaStone1)
