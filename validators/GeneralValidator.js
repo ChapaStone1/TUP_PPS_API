@@ -1,5 +1,4 @@
-// GeneralValidator.js
-const db = require('../db/db'); // adaptá el path si tu archivo se llama distinto
+const db = require('../db/db'); 
 
 class GeneralValidator {
   static async isDniAvailable(dni) {
@@ -59,7 +58,7 @@ class GeneralValidator {
         [matricula],
         (err, row) => {
           if (err) {
-            console.error('Error SQL en isMatriculaAvailable:', err); // <--- esto te mostrará el error real
+            console.error('Error SQL en isMatriculaAvailable:', err); 
             return reject('Error al verificar matrícula');
           }
           resolve(!row);

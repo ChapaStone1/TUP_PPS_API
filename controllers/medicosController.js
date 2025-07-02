@@ -43,7 +43,7 @@ const actualizarPerfil = async (req, res) => {
     especialidad_id,
   } = req.body;
 
-  // Primero validar disponibilidad de dni, email excluyendo al usuario actual:
+  // Primero validar disponibilidad de dni, email excluyendo al usuario actual
   try {
     const validation = await GeneralValidator.validateUpdate({ dni, email, idUsuario });
 
@@ -145,7 +145,6 @@ const allPacientes = (req, res) => {
     if (err || !row)
       return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
 
-    // Corregido: solo si NO es médico NI admin se deniega el acceso
     if (row.tipo !== 'medico' && row.tipo !== 'admin')
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
 
@@ -229,7 +228,7 @@ const allPacientes = (req, res) => {
 };
 
 
-// Buscar paciente por DNI (médico)
+// Buscar paciente por DNI 
 const buscarPacientePorDNI = (req, res) => {
   const idUsuario = req.user.id
   const { dni } = req.params

@@ -189,7 +189,7 @@ const verMiHistoriaClinica = (req, res) => {
   })
 }
 
-// Obtener todos los médicos habilitados con su información profesional
+// Obtener todos los médicos habilitados 
 const listarMedicosHabilitados = (req, res) => {
   const query = `
     SELECT 

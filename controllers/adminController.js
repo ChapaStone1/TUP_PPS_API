@@ -41,7 +41,7 @@ const cargarMedico = async (req, res) => {
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
     }
 
-    // Validaciones de DNI, email y matrícula
+    // Validaciones de DNI, email 
     try {
       const { valid, errors } = await GeneralValidator.validateRegister({ dni, email });
 
@@ -64,7 +64,7 @@ const cargarMedico = async (req, res) => {
       );
     }
 
-    // Si todo está bien, continuar con el registro
+
     bcrypt.hash(password, 10, (err, hashedPassword) => {
       if (err) {
         return res.status(500).json(ErrorMessage.from('Error al encriptar contraseña'));
@@ -122,7 +122,6 @@ const cambiarHabilitacionMedico = (req, res) => {
   const idAdmin = req.user.id;
   const idMedico = req.params.id;
 
-  // Verificar permisos del usuario que hace la solicitud
   db.get(`SELECT tipo FROM usuario WHERE id = ?`, [idAdmin], (err, row) => {
     if (err || !row) {
       return res.status(500).json(ErrorMessage.from('Error al verificar permisos'));
@@ -132,7 +131,6 @@ const cambiarHabilitacionMedico = (req, res) => {
       return res.status(403).json(CustomStatusMessage.from(null, 403, 'No autorizado'));
     }
 
-    // Obtener el estado actual del médico
     db.get(`SELECT habilitado FROM medico_info WHERE usuario_id = ?`, [idMedico], (err, medico) => {
       if (err) {
         return res.status(500).json(ErrorMessage.from('Error al obtener estado del médico'));
